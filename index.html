@@ -399,29 +399,12 @@ th { background: var(--green-100); color: var(--green-900); }
         </div>
       </div>
 
-      <div class="card-panel hidden" id="noCardPanel">
-        <h3>Aún no tienes cartón para este sorteo</h3>
-        <p>Solicita tu cartón virtual y sube el comprobante de pago para participar.</p>
-        <button class="btn" id="requestCardBtn">Solicitar cartón virtual</button>
-      </div>
+      <div class="card-panel hidden winner-alert-flash" id="gameWinnerBanner"></div>
 
-      <div class="card-panel hidden" id="pendingPaymentPanel">
-        <h3>Tu cartón fue generado ✅</h3>
-        <div class="payment-info-box">
-          <p>💰 Costo de este cartón: <strong id="paymentAmount">₡1,000</strong></p>
-          <p>📲 Realiza el pago por SINPE Móvil al número: <strong id="paymentSinpe">—</strong></p>
-        </div>
-        <p>Toma una foto (o captura de pantalla) de tu comprobante de pago SINPE y súbela aquí. En cuanto la envíes, se le notificará al instante al administrador para que la revise.</p>
-        <input type="file" id="proofInput" accept="image/*" capture="environment">
-        <img id="proofPreview" class="upload-preview hidden" alt="vista previa del comprobante">
-        <button class="btn amber" id="uploadProofBtn">Enviar comprobante</button>
-        <p id="proofStatus" style="font-size:0.85rem;color:var(--gray-600);"></p>
-      </div>
-
-      <div class="card-panel hidden" id="cardPanel">
-        <h3>Tu cartón virtual</h3>
-        <div class="bingo-card" id="bingoCard"></div>
-        <p class="empty-state hidden" id="winMsg"></p>
+      <div class="card-panel" id="myCardsPanel">
+        <h3>🎫 Tus cartones en este sorteo</h3>
+        <div id="myCardsList"></div>
+        <button class="btn" id="requestCardBtn">Comprar otro cartón</button>
       </div>
 
     </div>
@@ -969,17 +952,18 @@ let gameUnsub = null;
 let cardUnsub = null;
 let chatUnsub = null;
 let gamesListUnsub = null;
-let myCardId = null;
-let myCardData = null;
+let myCards = [];               // lista de TODOS los cartones del jugador en el sorteo actual
+let proofImageDataByCard = {};  // foto de comprobante pendiente de enviar, por cartón
 let currentGameData = null;
+let lastAnnouncedWinnerId = null;
 
 function initUserView() {
   // Reiniciar estado de paneles
   document.getElementById("activeGamePanel").classList.add("hidden");
   document.getElementById("chatPanel").classList.add("hidden");
   selectedGameId = null;
-  myCardId = null;
-  myCardData = null;
+  myCards = [];
+  proofImageDataByCard = {};
 
   if (gamesListUnsub) gamesListUnsub();
   gamesListUnsub = db.collection("games")
@@ -1016,8 +1000,8 @@ function statusLabel(status) {
 
 function selectGame(gameId) {
   selectedGameId = gameId;
-  proofImageData = "";
-  document.getElementById("proofPreview").classList.add("hidden");
+  proofImageDataByCard = {};
+  lastAnnouncedWinnerId = null;
   document.getElementById("activeGamePanel").classList.remove("hidden");
   document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
 
@@ -1030,7 +1014,7 @@ function selectGame(gameId) {
     renderGame(doc.id, doc.data());
   });
 
-  listenToMyCard(gameId);
+  listenToMyCards(gameId);
 }
 
 function renderGame(gameId, g) {
@@ -1044,8 +1028,6 @@ function renderGame(gameId, g) {
   renderPlantGallery(galleryImages);
 
   const price = g.cardPrice || 1000;
-  document.getElementById("paymentAmount").textContent = `₡${Number(price).toLocaleString("es-CR")}`;
-  document.getElementById("paymentSinpe").textContent = g.sinpeNumber || "Consulta con el administrador";
 
   const called = g.calledNumbers || [];
   const currentNum = called.length ? called[called.length - 1] : "-";
@@ -1061,9 +1043,34 @@ function renderGame(gameId, g) {
     historyEl.appendChild(chip);
   });
 
-  if (myCardId && myCardData) {
-    updateCardMarks(called);
+  if (myCards.length) {
+    updateAllCardMarks(called);
   }
+
+  // ---- Anuncio de ganador a TODOS los jugadores que estén viendo el sorteo ----
+  const winnerBanner = document.getElementById("gameWinnerBanner");
+  if (g.status === "finished" && g.winnerUserName) {
+    winnerBanner.classList.remove("hidden");
+    winnerBanner.innerHTML = `
+      <span class="badge-winner">🏆 ¡${g.winnerUserName} ganó "${g.plantName}"!</span>
+      <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
+        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. El sorteo ha finalizado.
+      </p>
+    `;
+
+    if (g.winnerUserId && g.winnerUserId !== lastAnnouncedWinnerId) {
+      lastAnnouncedWinnerId = g.winnerUserId;
+      if (g.winnerUserId === currentUser.uid) {
+        alert(`🏆 ¡Felicidades! Ganaste el sorteo de "${g.plantName}".\n\nPatrón completado: ${patternLabel(g.winPattern)}.\nRevisa el chat para coordinar la entrega con el administrador.`);
+      } else {
+        alert(`🏆 ¡${g.winnerUserName} ganó el sorteo de "${g.plantName}"!\n\nPatrón completado: ${patternLabel(g.winPattern)}.`);
+      }
+    }
+  } else {
+    winnerBanner.classList.add("hidden");
+  }
+
+  document.getElementById("requestCardBtn").disabled = g.status === "finished";
 
   const chatPanel = document.getElementById("chatPanel");
   if (g.status === "finished" && g.winnerUserId === currentUser.uid) {
@@ -1094,63 +1101,97 @@ function renderPlantGallery(images) {
   }
 }
 
-function listenToMyCard(gameId) {
+function listenToMyCards(gameId) {
   cardUnsub = db.collection("games").doc(gameId).collection("cards")
     .where("userId", "==", currentUser.uid)
-    .limit(1)
     .onSnapshot((snap) => {
-      if (snap.empty) {
-        myCardId = null;
-        myCardData = null;
-        document.getElementById("noCardPanel").classList.remove("hidden");
-        document.getElementById("pendingPaymentPanel").classList.add("hidden");
-        document.getElementById("cardPanel").classList.add("hidden");
-        return;
-      }
-      const doc = snap.docs[0];
-      myCardId = doc.id;
-      myCardData = doc.data();
-      if (Array.isArray(myCardData.numbers) && !Array.isArray(myCardData.numbers[0])) {
-        myCardData.numbers = unflattenGrid(myCardData.numbers);
-      }
-      if (Array.isArray(myCardData.marked) && typeof myCardData.marked[0] !== "object") {
-        myCardData.marked = unflattenGrid(myCardData.marked);
-      }
-
-      document.getElementById("noCardPanel").classList.add("hidden");
-
-      if (myCardData.paymentStatus !== "approved") {
-        document.getElementById("pendingPaymentPanel").classList.remove("hidden");
-        document.getElementById("cardPanel").classList.add("hidden");
-
-        const preview = document.getElementById("proofPreview");
-        const statusEl = document.getElementById("proofStatus");
-        if (myCardData.paymentProofUrl) {
-          preview.src = myCardData.paymentProofUrl;
-          preview.classList.remove("hidden");
-          statusEl.textContent =
-            myCardData.paymentStatus === "rejected"
-              ? "❌ Tu comprobante fue rechazado. Sube una nueva foto."
-              : "Comprobante recibido. Esperando aprobación del administrador...";
-        } else {
-          preview.classList.add("hidden");
-          statusEl.textContent = "Aún no has subido tu comprobante.";
+      myCards = snap.docs.map((doc) => {
+        const data = doc.data();
+        if (Array.isArray(data.numbers) && !Array.isArray(data.numbers[0])) {
+          data.numbers = unflattenGrid(data.numbers);
         }
-      } else {
-        document.getElementById("pendingPaymentPanel").classList.add("hidden");
-        document.getElementById("cardPanel").classList.remove("hidden");
-        renderBingoCard(myCardData.numbers, myCardData.marked);
-        if (myCardData.completed) {
-          const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
-          document.getElementById("winMsg").classList.remove("hidden");
-          document.getElementById("winMsg").textContent = `🏆 ¡Completaste el patrón "${patternLabel(pattern)}"!`;
+        if (Array.isArray(data.marked) && typeof data.marked[0] !== "object") {
+          data.marked = unflattenGrid(data.marked);
         }
-      }
+        return { id: doc.id, data };
+      });
+      // Orden estable por fecha de creación (evita necesitar un índice compuesto en Firestore)
+      myCards.sort((a, b) => (a.data.createdAt?.seconds || 0) - (b.data.createdAt?.seconds || 0));
+      renderMyCards();
     });
+}
+
+function renderMyCards() {
+  const container = document.getElementById("myCardsList");
+  container.innerHTML = "";
+
+  if (!myCards.length) {
+    container.innerHTML = `<p class="empty-state">Aún no tienes cartones para este sorteo. ¡Solicita el primero!</p>`;
+  }
+
+  const price = (currentGameData && currentGameData.cardPrice) || 1000;
+  const sinpe = (currentGameData && currentGameData.sinpeNumber) || "Consulta con el administrador";
+
+  myCards.forEach((card, idx) => {
+    const panel = document.createElement("div");
+    panel.className = "card-panel";
+    panel.style.background = "var(--gray-100)";
+    panel.style.marginBottom = "14px";
+
+    if (card.data.paymentStatus !== "approved") {
+      const statusMsg = card.data.paymentStatus === "rejected"
+        ? "❌ Tu comprobante fue rechazado. Sube una nueva foto."
+        : (card.data.paymentProofUrl
+          ? "Comprobante recibido. Esperando aprobación del administrador..."
+          : "Aún no has subido tu comprobante.");
+
+      panel.innerHTML = `
+        <h4 style="margin-top:0;">Cartón #${idx + 1} — pendiente de pago</h4>
+        <div class="payment-info-box">
+          <p>💰 Costo de este cartón: <strong>₡${Number(price).toLocaleString("es-CR")}</strong></p>
+          <p>📲 Realiza el pago por SINPE Móvil al número: <strong>${sinpe}</strong></p>
+        </div>
+        <p>Toma una foto (o captura de pantalla) de tu comprobante de pago SINPE y súbela aquí.</p>
+        <input type="file" accept="image/*" capture="environment" data-proof-input="${card.id}">
+        <img class="upload-preview hidden" alt="vista previa del comprobante" data-proof-preview="${card.id}">
+        <button class="btn amber" data-upload-proof="${card.id}">Enviar comprobante</button>
+        <p style="font-size:0.85rem;color:var(--gray-600);" data-proof-status="${card.id}">${statusMsg}</p>
+      `;
+      container.appendChild(panel);
+
+      if (card.data.paymentProofUrl) {
+        const previewImg = panel.querySelector(`[data-proof-preview="${card.id}"]`);
+        previewImg.src = card.data.paymentProofUrl;
+        previewImg.classList.remove("hidden");
+      }
+    } else {
+      panel.innerHTML = `
+        <h4 style="margin-top:0;">Cartón #${idx + 1} ${card.data.completed ? '<span class="badge-winner">🏆 Ganador</span>' : ""}</h4>
+        <div class="bingo-card" data-bingo-card="${card.id}"></div>
+        <p class="empty-state hidden" data-win-msg="${card.id}"></p>
+      `;
+      container.appendChild(panel);
+      renderBingoCard(card.data.numbers, card.data.marked, card.id);
+      if (card.data.completed) {
+        const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
+        const msgEl = panel.querySelector(`[data-win-msg="${card.id}"]`);
+        msgEl.classList.remove("hidden");
+        msgEl.textContent = `🏆 ¡Este cartón completó el patrón "${patternLabel(pattern)}"!`;
+      }
+    }
+  });
+
+  container.querySelectorAll("[data-proof-input]").forEach((input) => {
+    input.addEventListener("change", (e) => handleProofFileChange(e, input.dataset.proofInput));
+  });
+  container.querySelectorAll("[data-upload-proof]").forEach((btn) => {
+    btn.addEventListener("click", () => handleUploadProof(btn.dataset.uploadProof));
+  });
 }
 
 document.getElementById("requestCardBtn").addEventListener("click", async () => {
   if (!selectedGameId) return;
+  if (currentGameData && currentGameData.status === "finished") return;
   const { numbers, marked } = generateBingoCard();
   const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc();
   await cardRef.set({
@@ -1166,34 +1207,34 @@ document.getElementById("requestCardBtn").addEventListener("click", async () => 
   });
 });
 
-let proofImageData = "";
-
-document.getElementById("proofInput").addEventListener("change", async (e) => {
+async function handleProofFileChange(e, cardId) {
   const file = e.target.files[0];
   if (!file) return;
-  const statusEl = document.getElementById("proofStatus");
-  const preview = document.getElementById("proofPreview");
+  const statusEl = document.querySelector(`[data-proof-status="${cardId}"]`);
+  const preview = document.querySelector(`[data-proof-preview="${cardId}"]`);
   statusEl.textContent = "Procesando foto...";
   try {
-    proofImageData = await fileToCompressedDataUrl(file, 1000, 0.75);
-    preview.src = proofImageData;
+    const dataUrl = await fileToCompressedDataUrl(file, 1000, 0.75);
+    proofImageDataByCard[cardId] = dataUrl;
+    preview.src = dataUrl;
     preview.classList.remove("hidden");
     statusEl.textContent = 'Foto lista. Presiona "Enviar comprobante".';
   } catch (err) {
     statusEl.textContent = "No se pudo procesar la foto: " + err.message;
   }
-});
+}
 
-document.getElementById("uploadProofBtn").addEventListener("click", async () => {
-  const statusEl = document.getElementById("proofStatus");
-  if (!proofImageData || !myCardId) {
+async function handleUploadProof(cardId) {
+  const statusEl = document.querySelector(`[data-proof-status="${cardId}"]`);
+  const dataUrl = proofImageDataByCard[cardId];
+  if (!dataUrl) {
     statusEl.textContent = "Primero toma o selecciona la foto de tu comprobante.";
     return;
   }
   statusEl.textContent = "Enviando comprobante...";
   try {
-    await db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId).update({
-      paymentProofUrl: proofImageData,
+    await db.collection("games").doc(selectedGameId).collection("cards").doc(cardId).update({
+      paymentProofUrl: dataUrl,
       paymentStatus: "pending"
     });
 
@@ -1202,22 +1243,23 @@ document.getElementById("uploadProofBtn").addEventListener("click", async () => 
       type: "payment_proof",
       gameId: selectedGameId,
       gameName: (currentGameData && currentGameData.plantName) || "",
-      cardId: myCardId,
+      cardId,
       userId: currentUser.uid,
       userName: currentUserData.name,
       read: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    proofImageData = "";
+    delete proofImageDataByCard[cardId];
     statusEl.textContent = "✅ Comprobante enviado. El administrador fue notificado y revisará tu pago.";
   } catch (err) {
     statusEl.textContent = "Error al enviar: " + err.message;
   }
-});
+}
 
-function renderBingoCard(numbers, marked) {
-  const el = document.getElementById("bingoCard");
+function renderBingoCard(numbers, marked, cardId) {
+  const el = document.querySelector(`[data-bingo-card="${cardId}"]`);
+  if (!el) return;
   el.innerHTML = "";
   BINGO_LETTERS.forEach((l) => {
     const h = document.createElement("div");
@@ -1236,21 +1278,25 @@ function renderBingoCard(numbers, marked) {
   }
 }
 
-async function updateCardMarks(calledNumbers) {
-  if (!myCardData || myCardData.paymentStatus !== "approved") return;
-
-  const newMarked = recalculateMarks(myCardData.numbers, calledNumbers);
-  renderBingoCard(myCardData.numbers, newMarked);
-
+async function updateAllCardMarks(calledNumbers) {
   const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
-  const wasWinning = checkPattern(myCardData.marked, pattern);
-  const nowWinning = checkPattern(newMarked, pattern);
 
-  const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId);
-  cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
+  for (const card of myCards) {
+    if (card.data.paymentStatus !== "approved") continue;
 
-  if (!wasWinning && nowWinning) {
-    await tryDeclareWinner(cardRef);
+    const newMarked = recalculateMarks(card.data.numbers, calledNumbers);
+    const wasWinning = checkPattern(card.data.marked, pattern);
+    const nowWinning = checkPattern(newMarked, pattern);
+
+    card.data.marked = newMarked;
+    renderBingoCard(card.data.numbers, newMarked, card.id);
+
+    const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(card.id);
+    cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
+
+    if (!wasWinning && nowWinning) {
+      await tryDeclareWinner(cardRef);
+    }
   }
 }
 
