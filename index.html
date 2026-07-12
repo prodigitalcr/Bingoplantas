@@ -620,6 +620,27 @@ const ADMIN_EMAILS = [
 // UTILIDADES DEL CARTÓN DE BINGO (75 bolas, columnas B-I-N-G-O)
 // ============================================================
 
+// Firestore no permite arrays anidados (array dentro de array).
+// Estas funciones convierten la matriz 5x5 a un array plano de 25
+// elementos para guardarla, y lo reconstruyen a 5x5 al leerla.
+function flattenGrid(grid) {
+  const flat = [];
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      flat.push(grid[row][col]);
+    }
+  }
+  return flat;
+}
+
+function unflattenGrid(flat) {
+  const grid = [];
+  for (let row = 0; row < 5; row++) {
+    grid.push(flat.slice(row * 5, row * 5 + 5));
+  }
+  return grid;
+}
+
 function generateBingoCard() {
   const ranges = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75]];
   const numbers = [[], [], [], [], []];
@@ -1089,6 +1110,12 @@ function listenToMyCard(gameId) {
       const doc = snap.docs[0];
       myCardId = doc.id;
       myCardData = doc.data();
+      if (Array.isArray(myCardData.numbers) && !Array.isArray(myCardData.numbers[0])) {
+        myCardData.numbers = unflattenGrid(myCardData.numbers);
+      }
+      if (Array.isArray(myCardData.marked) && typeof myCardData.marked[0] !== "object") {
+        myCardData.marked = unflattenGrid(myCardData.marked);
+      }
 
       document.getElementById("noCardPanel").classList.add("hidden");
 
@@ -1130,7 +1157,8 @@ document.getElementById("requestCardBtn").addEventListener("click", async () => 
     userId: currentUser.uid,
     userName: currentUserData.name,
     userEmail: currentUserData.email,
-    numbers, marked,
+    numbers: flattenGrid(numbers),
+    marked: flattenGrid(marked),
     paymentProofUrl: null,
     paymentStatus: "pending",
     completed: false,
@@ -1219,7 +1247,7 @@ async function updateCardMarks(calledNumbers) {
   const nowWinning = checkPattern(newMarked, pattern);
 
   const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId);
-  cardRef.update({ marked: newMarked }).catch(() => {});
+  cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
 
   if (!wasWinning && nowWinning) {
     await tryDeclareWinner(cardRef);
@@ -1712,8 +1740,11 @@ document.getElementById("resetGameBtn").addEventListener("click", async () => {
   const batch = db.batch();
   cardsSnap.forEach((doc) => {
     const data = doc.data();
-    const resetMarked = recalculateMarks(data.numbers, []);
-    batch.update(doc.ref, { marked: resetMarked, completed: false });
+    const numbersGrid = Array.isArray(data.numbers) && !Array.isArray(data.numbers[0])
+      ? unflattenGrid(data.numbers)
+      : data.numbers;
+    const resetMarked = recalculateMarks(numbersGrid, []);
+    batch.update(doc.ref, { marked: flattenGrid(resetMarked), completed: false });
   });
   await batch.commit();
 });
