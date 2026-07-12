@@ -238,6 +238,57 @@ th { background: var(--green-100); color: var(--green-900); }
 
 .badge-winner { background: var(--amber-500); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
 .empty-state { text-align: center; color: var(--gray-600); padding: 30px; font-size: 0.9rem; }
+
+/* ---------- Galería de fotos de la planta ---------- */
+.gallery-thumbs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.gallery-thumb {
+  width: 64px; height: 64px; object-fit: cover; border-radius: 8px;
+  border: 2px solid var(--gray-300); cursor: pointer; transition: border-color 0.2s, transform 0.2s;
+}
+.gallery-thumb:hover { border-color: var(--green-500); transform: scale(1.05); }
+.plant-item .mini-thumbs { display: flex; gap: 4px; padding: 0 10px 10px; }
+.plant-item .mini-thumbs img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 1px solid var(--gray-300); }
+
+/* ---------- Caja de información de pago (SINPE) ---------- */
+.payment-info-box {
+  background: var(--green-100);
+  border: 1px dashed var(--green-500);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  font-size: 0.92rem;
+}
+.payment-info-box p { margin: 4px 0; }
+.payment-info-box strong { color: var(--green-900); }
+
+/* ---------- Patrón ganador ---------- */
+.pattern-tag {
+  display: inline-block;
+  background: var(--green-700);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 6px 0 12px 0;
+}
+
+/* ---------- Alerta de nuevo ganador (admin) ---------- */
+@keyframes winnerPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(217,155,63,0.6); }
+  70%  { box-shadow: 0 0 0 14px rgba(217,155,63,0); }
+  100% { box-shadow: 0 0 0 0 rgba(217,155,63,0); }
+}
+.winner-alert-flash {
+  animation: winnerPulse 1.4s infinite;
+  background: #fff3d6 !important;
+  border: 2px solid var(--amber-500);
+  border-radius: var(--radius);
+  padding: 14px !important;
+}
+
+.game-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .game-settings-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -298,9 +349,11 @@ th { background: var(--green-100); color: var(--green-900); }
 
       <div class="card-panel">
         <h2 id="activePlantTitle">🌱 Planta en juego</h2>
+        <span class="pattern-tag" id="gameWinPatternLabel">Cartón lleno</span>
         <div class="grid-2">
           <div>
             <img id="activePlantImg" src="" alt="planta" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;">
+            <div class="gallery-thumbs" id="activePlantThumbs"></div>
             <p id="activePlantDesc" style="color:var(--gray-600);"></p>
           </div>
           <div class="current-number-display">
@@ -319,7 +372,11 @@ th { background: var(--green-100); color: var(--green-900); }
 
       <div class="card-panel hidden" id="pendingPaymentPanel">
         <h3>Tu cartón fue generado ✅</h3>
-        <p>Sube tu comprobante de pago a cualquier servicio (WhatsApp, Google Drive, Imgur, etc.), copia el enlace público y pégalo aquí para que el administrador lo apruebe.</p>
+        <div class="payment-info-box">
+          <p>💰 Costo de este cartón: <strong id="paymentAmount">₡1,000</strong></p>
+          <p>📲 Realiza el pago por SINPE Móvil al número: <strong id="paymentSinpe">—</strong></p>
+        </div>
+        <p>Sube tu comprobante de pago a cualquier servicio (WhatsApp, Google Drive, Imgur, etc.), copia el enlace público y pégalo aquí. La aprobación queda a cargo del administrador.</p>
         <input type="url" id="proofInput" placeholder="https://... (enlace a tu comprobante)">
         <button class="btn amber" id="uploadProofBtn">Enviar comprobante</button>
         <p id="proofStatus" style="font-size:0.85rem;color:var(--gray-600);"></p>
@@ -366,8 +423,10 @@ th { background: var(--green-100); color: var(--green-900); }
       <div id="plantForm">
         <input type="hidden" id="plantEditId">
         <input type="text" id="plantName" placeholder="Nombre de la planta (ej: Monstera Deliciosa)">
-        <textarea id="plantDesc" placeholder="Descripción breve" rows="2"></textarea>
-        <input type="text" id="plantImageUrl" placeholder="URL de la imagen (ej: enlace de Google Imágenes, Imgur, etc.)">
+        <textarea id="plantDesc" placeholder="Descripción del juego / de la planta (ej: reglas, detalles del premio)" rows="2"></textarea>
+        <input type="text" id="plantImageUrl" placeholder="URL de la foto 1 (ej: enlace de Google Imágenes, Imgur, etc.)">
+        <input type="text" id="plantImageUrl2" placeholder="URL de la foto 2 (opcional)">
+        <input type="text" id="plantImageUrl3" placeholder="URL de la foto 3 (opcional)">
         <button class="btn" id="savePlantBtn">Guardar planta</button>
         <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
       </div>
@@ -380,6 +439,14 @@ th { background: var(--green-100); color: var(--green-900); }
       <div class="grid-2">
         <div>
           <select id="plantSelectForGame"></select>
+          <input type="text" id="newGameSinpe" placeholder="Número SINPE Móvil para este sorteo">
+          <input type="number" id="newGamePrice" placeholder="Precio por cartón (₡)" value="1000">
+          <select id="newGamePattern">
+            <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
+            <option value="fourCorners">Patrón ganador: Cuatro esquinas</option>
+            <option value="cross">Patrón ganador: Forma de cruz</option>
+            <option value="x">Patrón ganador: Forma de X</option>
+          </select>
           <button class="btn" id="createGameBtn">Crear nuevo sorteo con esta planta</button>
         </div>
         <div>
@@ -390,6 +457,22 @@ th { background: var(--green-100); color: var(--green-900); }
 
     <div class="card-panel hidden" id="gameControlPanel">
       <h2 id="gameControlTitle">Sorteo</h2>
+
+      <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
+        <h3 style="margin-top:0;">⚙️ Configuración de pago y patrón ganador</h3>
+        <div class="game-settings-grid">
+          <input type="text" id="editSinpe" placeholder="Número SINPE Móvil">
+          <input type="number" id="editPrice" placeholder="Precio por cartón (₡)">
+        </div>
+        <select id="editPattern">
+          <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
+          <option value="fourCorners">Patrón ganador: Cuatro esquinas</option>
+          <option value="cross">Patrón ganador: Forma de cruz</option>
+          <option value="x">Patrón ganador: Forma de X</option>
+        </select>
+        <button class="btn small" id="saveGameSettingsBtn">Guardar configuración</button>
+        <p id="gameSettingsStatus" style="font-size:0.8rem;color:var(--gray-600);margin:6px 0 0 0;"></p>
+      </div>
 
       <div class="current-number-display">
         <div class="big-number" id="adminCurrentNumber">-</div>
@@ -526,6 +609,42 @@ function isCardComplete(marked) {
     }
   }
   return true;
+}
+
+// ============================================================
+// PATRONES GANADORES CONFIGURABLES POR SORTEO
+// ============================================================
+const PATTERN_LABELS = {
+  fullCard: "Cartón lleno (todos los números)",
+  fourCorners: "Cuatro esquinas",
+  cross: "Forma de cruz",
+  x: "Forma de X"
+};
+
+function patternLabel(pattern) {
+  return PATTERN_LABELS[pattern] || PATTERN_LABELS.fullCard;
+}
+
+function checkPattern(marked, pattern) {
+  switch (pattern) {
+    case "fourCorners":
+      return !!(marked[0][0] && marked[0][4] && marked[4][0] && marked[4][4]);
+    case "cross": {
+      for (let i = 0; i < 5; i++) {
+        if (!marked[2][i] || !marked[i][2]) return false;
+      }
+      return true;
+    }
+    case "x": {
+      for (let i = 0; i < 5; i++) {
+        if (!marked[i][i] || !marked[i][4 - i]) return false;
+      }
+      return true;
+    }
+    case "fullCard":
+    default:
+      return isCardComplete(marked);
+  }
 }
 
 const BINGO_LETTERS = ["B", "I", "N", "G", "O"];
@@ -717,6 +836,7 @@ let chatUnsub = null;
 let gamesListUnsub = null;
 let myCardId = null;
 let myCardData = null;
+let currentGameData = null;
 
 function initUserView() {
   // Reiniciar estado de paneles
@@ -746,6 +866,7 @@ function initUserView() {
           <div class="plant-body">
             <h4>${g.plantName}</h4>
             <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
+            <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
           </div>
         `;
         div.addEventListener("click", () => selectGame(doc.id));
@@ -776,9 +897,18 @@ function selectGame(gameId) {
 }
 
 function renderGame(gameId, g) {
+  currentGameData = g;
+
   document.getElementById("activePlantTitle").textContent = `🌱 ${g.plantName}`;
-  document.getElementById("activePlantImg").src = g.plantImageUrl || "";
   document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
+  document.getElementById("gameWinPatternLabel").textContent = "🎯 " + patternLabel(g.winPattern);
+
+  const galleryImages = (g.plantImages && g.plantImages.length) ? g.plantImages : (g.plantImageUrl ? [g.plantImageUrl] : []);
+  renderPlantGallery(galleryImages);
+
+  const price = g.cardPrice || 1000;
+  document.getElementById("paymentAmount").textContent = `₡${Number(price).toLocaleString("es-CR")}`;
+  document.getElementById("paymentSinpe").textContent = g.sinpeNumber || "Consulta con el administrador";
 
   const called = g.calledNumbers || [];
   const currentNum = called.length ? called[called.length - 1] : "-";
@@ -804,6 +934,26 @@ function renderGame(gameId, g) {
     listenToChat(gameId);
   } else {
     chatPanel.classList.add("hidden");
+  }
+}
+
+function renderPlantGallery(images) {
+  const main = document.getElementById("activePlantImg");
+  const thumbs = document.getElementById("activePlantThumbs");
+  const list = (images || []).filter(Boolean);
+
+  main.src = list[0] || "";
+  thumbs.innerHTML = "";
+
+  if (list.length > 1) {
+    list.forEach((url) => {
+      const t = document.createElement("img");
+      t.src = url;
+      t.className = "gallery-thumb";
+      t.alt = "foto de la planta";
+      t.addEventListener("click", () => { main.src = url; });
+      thumbs.appendChild(t);
+    });
   }
 }
 
@@ -838,8 +988,9 @@ function listenToMyCard(gameId) {
         document.getElementById("cardPanel").classList.remove("hidden");
         renderBingoCard(myCardData.numbers, myCardData.marked);
         if (myCardData.completed) {
+          const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
           document.getElementById("winMsg").classList.remove("hidden");
-          document.getElementById("winMsg").textContent = "🏆 ¡Completaste tu cartón!";
+          document.getElementById("winMsg").textContent = `🏆 ¡Completaste el patrón "${patternLabel(pattern)}"!`;
         }
       }
     });
@@ -906,13 +1057,14 @@ async function updateCardMarks(calledNumbers) {
   const newMarked = recalculateMarks(myCardData.numbers, calledNumbers);
   renderBingoCard(myCardData.numbers, newMarked);
 
-  const wasComplete = isCardComplete(myCardData.marked);
-  const nowComplete = isCardComplete(newMarked);
+  const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
+  const wasWinning = checkPattern(myCardData.marked, pattern);
+  const nowWinning = checkPattern(newMarked, pattern);
 
   const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId);
   cardRef.update({ marked: newMarked }).catch(() => {});
 
-  if (!wasComplete && nowComplete) {
+  if (!wasWinning && nowWinning) {
     await tryDeclareWinner(cardRef);
   }
 }
@@ -986,6 +1138,7 @@ let adminCardsUnsub = null;
 let adminChatUnsub = null;
 let plantsUnsub = null;
 let gamesSelectorUnsub = null;
+let lastAlertedWinnerId = null;
 
 function initAdminView() {
   document.getElementById("gameControlPanel").classList.add("hidden");
@@ -1008,13 +1161,18 @@ function loadPlants() {
       const p = doc.data();
       plantsCache[doc.id] = p;
 
+      const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
+      const extraThumbs = images.slice(1).map(url => `<img src="${url}" alt="foto extra">`).join("");
+
       const item = document.createElement("div");
       item.className = "plant-item";
       item.innerHTML = `
-        <img src="${p.imageUrl || ''}" alt="${p.name}">
+        <img src="${images[0] || ''}" alt="${p.name}">
+        ${extraThumbs ? `<div class="mini-thumbs">${extraThumbs}</div>` : ""}
         <div class="plant-body">
           <h4>${p.name}</h4>
           <p>${p.description || ""}</p>
+          <p style="font-size:0.7rem;color:var(--gray-600);">${images.length} foto(s) cargada(s)</p>
           <div style="margin-top:8px;display:flex;gap:6px;">
             <button class="btn small secondary" data-edit="${doc.id}">Editar</button>
             <button class="btn small red" data-delete="${doc.id}">Eliminar</button>
@@ -1040,10 +1198,13 @@ function loadPlants() {
 
 function editPlant(id) {
   const p = plantsCache[id];
+  const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
   document.getElementById("plantEditId").value = id;
   document.getElementById("plantName").value = p.name;
   document.getElementById("plantDesc").value = p.description || "";
-  document.getElementById("plantImageUrl").value = p.imageUrl || "";
+  document.getElementById("plantImageUrl").value = images[0] || "";
+  document.getElementById("plantImageUrl2").value = images[1] || "";
+  document.getElementById("plantImageUrl3").value = images[2] || "";
   document.getElementById("cancelEditBtn").classList.remove("hidden");
   document.getElementById("plantForm").scrollIntoView({ behavior: "smooth" });
 }
@@ -1053,6 +1214,8 @@ document.getElementById("cancelEditBtn").addEventListener("click", () => {
   document.getElementById("plantName").value = "";
   document.getElementById("plantDesc").value = "";
   document.getElementById("plantImageUrl").value = "";
+  document.getElementById("plantImageUrl2").value = "";
+  document.getElementById("plantImageUrl3").value = "";
   document.getElementById("cancelEditBtn").classList.add("hidden");
 });
 
@@ -1066,6 +1229,9 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
   const name = document.getElementById("plantName").value.trim();
   const description = document.getElementById("plantDesc").value.trim();
   const imageUrl = document.getElementById("plantImageUrl").value.trim();
+  const imageUrl2 = document.getElementById("plantImageUrl2").value.trim();
+  const imageUrl3 = document.getElementById("plantImageUrl3").value.trim();
+  const images = [imageUrl, imageUrl2, imageUrl3].filter(Boolean);
 
   if (!name) {
     alert("El nombre de la planta es obligatorio.");
@@ -1078,7 +1244,9 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
 
   try {
     const payload = {
-      name, description, imageUrl,
+      name, description,
+      imageUrl: images[0] || "",
+      images,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -1126,11 +1294,20 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
     return;
   }
   const plant = plantsCache[plantId];
+  const sinpeNumber = document.getElementById("newGameSinpe").value.trim();
+  const cardPrice = Number(document.getElementById("newGamePrice").value) || 1000;
+  const winPattern = document.getElementById("newGamePattern").value || "fullCard";
+  const plantImages = (plant.images && plant.images.length) ? plant.images : (plant.imageUrl ? [plant.imageUrl] : []);
+
   const gameRef = await db.collection("games").add({
     plantId,
     plantName: plant.name,
     plantDescription: plant.description || "",
-    plantImageUrl: plant.imageUrl || "",
+    plantImageUrl: plantImages[0] || "",
+    plantImages,
+    sinpeNumber: sinpeNumber || "",
+    cardPrice,
+    winPattern,
     status: "open",
     calledNumbers: [],
     winnerUserId: null,
@@ -1138,6 +1315,11 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
     winnerCardId: null,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
+
+  document.getElementById("newGameSinpe").value = "";
+  document.getElementById("newGamePrice").value = "1000";
+  document.getElementById("newGamePattern").value = "fullCard";
+
   document.getElementById("gameSelector").value = gameRef.id;
   selectAdminGame(gameRef.id);
 });
@@ -1152,11 +1334,23 @@ document.getElementById("gameSelector").addEventListener("change", (e) => {
 
 function selectAdminGame(gameId) {
   selectedAdminGameId = gameId;
+  lastAlertedWinnerId = null;
   document.getElementById("gameControlPanel").classList.remove("hidden");
+  document.getElementById("gameSettingsStatus").textContent = "";
 
   if (adminGameUnsub) adminGameUnsub();
   if (adminCardsUnsub) adminCardsUnsub();
   if (adminChatUnsub) adminChatUnsub();
+
+  // Carga inicial de la configuración editable (SINPE, precio, patrón) del sorteo
+  db.collection("games").doc(gameId).get().then((doc) => {
+    if (!doc.exists) return;
+    const g = doc.data();
+    document.getElementById("editSinpe").value = g.sinpeNumber || "";
+    document.getElementById("editPrice").value = g.cardPrice || 1000;
+    document.getElementById("editPattern").value = g.winPattern || "fullCard";
+    if (g.winnerUserId) lastAlertedWinnerId = g.winnerUserId;
+  });
 
   adminGameUnsub = db.collection("games").doc(gameId).onSnapshot((doc) => {
     if (!doc.exists) return;
@@ -1168,8 +1362,25 @@ function selectAdminGame(gameId) {
     .onSnapshot((snap) => renderParticipants(gameId, snap));
 }
 
+document.getElementById("saveGameSettingsBtn").addEventListener("click", async () => {
+  if (!selectedAdminGameId) return;
+  const sinpeNumber = document.getElementById("editSinpe").value.trim();
+  const cardPrice = Number(document.getElementById("editPrice").value) || 1000;
+  const winPattern = document.getElementById("editPattern").value || "fullCard";
+  const statusEl = document.getElementById("gameSettingsStatus");
+
+  statusEl.textContent = "Guardando...";
+  try {
+    await db.collection("games").doc(selectedAdminGameId).update({ sinpeNumber, cardPrice, winPattern });
+    statusEl.textContent = "✅ Configuración actualizada.";
+  } catch (err) {
+    statusEl.textContent = "Error al guardar: " + err.message;
+  }
+});
+
 function renderAdminGame(gameId, g) {
-  document.getElementById("gameControlTitle").textContent = `Sorteo: ${g.plantName} — ${statusLabelAdmin(g.status)}`;
+  document.getElementById("gameControlTitle").textContent =
+    `Sorteo: ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
 
   const called = g.calledNumbers || [];
   const currentNum = called.length ? called[called.length - 1] : "-";
@@ -1189,12 +1400,25 @@ function renderAdminGame(gameId, g) {
   const callBtn = document.getElementById("callNumberBtn");
   if (g.status === "finished" && g.winnerUserName) {
     banner.classList.remove("hidden");
-    banner.innerHTML = `<span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>`;
+    banner.classList.add("winner-alert-flash");
+    banner.innerHTML = `
+      <span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>
+      <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
+        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega de la planta por el chat de abajo.
+      </p>
+    `;
     callBtn.disabled = true;
     document.getElementById("adminChatPanel").classList.remove("hidden");
     listenAdminChat(gameId);
+
+    // Alerta instantánea al administrador la primera vez que se detecta un ganador
+    if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
+      lastAlertedWinnerId = g.winnerUserId;
+      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat para coordinar la entrega de la planta.`);
+    }
   } else {
     banner.classList.add("hidden");
+    banner.classList.remove("winner-alert-flash");
     callBtn.disabled = called.length >= 75;
     document.getElementById("adminChatPanel").classList.add("hidden");
   }
@@ -1226,6 +1450,8 @@ document.getElementById("callNumberBtn").addEventListener("click", async () => {
 document.getElementById("resetGameBtn").addEventListener("click", async () => {
   if (!selectedAdminGameId) return;
   if (!confirm("Esto reiniciará los números cantados y el ganador de este sorteo. ¿Continuar?")) return;
+
+  lastAlertedWinnerId = null;
 
   await db.collection("games").doc(selectedAdminGameId).update({
     calledNumbers: [],
