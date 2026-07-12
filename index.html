@@ -569,14 +569,34 @@ auth.onAuthStateChanged(async (user) => {
   }
 
   currentUser = user;
-  const doc = await db.collection("users").doc(user.uid).get();
-  currentUserData = doc.data();
+  const docRef = db.collection("users").doc(user.uid);
+  let doc = await docRef.get();
 
-  if (!currentUserData) {
-    // Documento de usuario no existe todavía (raro, pero por seguridad cerramos sesión)
-    auth.signOut();
-    return;
+  if (!doc.exists) {
+    // Caso de recuperación: el usuario existe en Firebase Authentication pero
+    // por alguna razón (ej. reglas de Firestore no publicadas en el momento del
+    // registro) nunca se creó su documento en Firestore. Lo creamos ahora mismo
+    // en vez de cerrarle la sesión, para no dejarlo bloqueado fuera de la app.
+    const email = (user.email || "").toLowerCase();
+    const role = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email) ? "admin" : "user";
+    const name = user.displayName || email.split("@")[0];
+    try {
+      await docRef.set({
+        name,
+        email: user.email,
+        role,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      doc = await docRef.get();
+    } catch (err) {
+      console.error("No se pudo crear el documento de usuario:", err);
+      showView(authView);
+      errorMsg.textContent = "No se pudo completar tu perfil. Verifica que las reglas de Firestore estén publicadas e intenta de nuevo.";
+      return;
+    }
   }
+
+  currentUserData = doc.data();
 
   if (currentUserData.role === "admin") {
     document.getElementById("userInfoAdmin").textContent = `${currentUserData.name} (Administrador)`;
