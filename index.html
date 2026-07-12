@@ -289,6 +289,41 @@ th { background: var(--green-100); color: var(--green-900); }
 
 .game-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 700px) { .game-settings-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Vista previa de fotos subidas (input file) ---------- */
+.upload-preview {
+  width: 90px; height: 90px; object-fit: cover; border-radius: 8px;
+  border: 2px solid var(--gray-300); margin: 4px 0 12px 0; display: block;
+}
+.upload-field label { font-size: 0.8rem; color: var(--gray-600); display: block; margin-bottom: 4px; }
+.upload-field { margin-bottom: 8px; }
+
+/* ---------- Miniatura de comprobante en tabla admin ---------- */
+.proof-thumb {
+  width: 44px; height: 44px; object-fit: cover; border-radius: 6px;
+  border: 1px solid var(--gray-300); cursor: pointer;
+}
+
+/* ---------- Lightbox (ver comprobante en grande) ---------- */
+.lightbox-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
+}
+.lightbox-overlay img { max-width: 90vw; max-height: 85vh; border-radius: 8px; }
+.lightbox-close {
+  position: absolute; top: 20px; right: 20px; width: auto;
+}
+
+/* ---------- Badge de notificaciones ---------- */
+.notif-badge {
+  background: var(--red-500); color: white; border-radius: 12px;
+  padding: 2px 9px; font-size: 0.75rem; font-weight: bold; margin-left: 8px;
+}
+.notif-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 4px; border-bottom: 1px solid var(--gray-300); gap: 10px;
+}
+.notif-item:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -376,8 +411,9 @@ th { background: var(--green-100); color: var(--green-900); }
           <p>💰 Costo de este cartón: <strong id="paymentAmount">₡1,000</strong></p>
           <p>📲 Realiza el pago por SINPE Móvil al número: <strong id="paymentSinpe">—</strong></p>
         </div>
-        <p>Sube tu comprobante de pago a cualquier servicio (WhatsApp, Google Drive, Imgur, etc.), copia el enlace público y pégalo aquí. La aprobación queda a cargo del administrador.</p>
-        <input type="url" id="proofInput" placeholder="https://... (enlace a tu comprobante)">
+        <p>Toma una foto (o captura de pantalla) de tu comprobante de pago SINPE y súbela aquí. En cuanto la envíes, se le notificará al instante al administrador para que la revise.</p>
+        <input type="file" id="proofInput" accept="image/*" capture="environment">
+        <img id="proofPreview" class="upload-preview hidden" alt="vista previa del comprobante">
         <button class="btn amber" id="uploadProofBtn">Enviar comprobante</button>
         <p id="proofStatus" style="font-size:0.85rem;color:var(--gray-600);"></p>
       </div>
@@ -416,6 +452,11 @@ th { background: var(--green-100); color: var(--green-900); }
 
   <div class="container">
 
+    <div class="card-panel" id="notificationsPanel">
+      <h2>🔔 Notificaciones <span class="notif-badge hidden" id="notifBadge">0</span></h2>
+      <div id="notificationsList"><p class="empty-state">No hay notificaciones pendientes.</p></div>
+    </div>
+
     <div class="card-panel">
       <h2>🪴 Base de plantas a sortear</h2>
       <p style="color:var(--gray-600);font-size:0.9rem;">Registra hasta ~20 plantas. Cada una podrá usarse para crear un sorteo.</p>
@@ -424,9 +465,23 @@ th { background: var(--green-100); color: var(--green-900); }
         <input type="hidden" id="plantEditId">
         <input type="text" id="plantName" placeholder="Nombre de la planta (ej: Monstera Deliciosa)">
         <textarea id="plantDesc" placeholder="Descripción del juego / de la planta (ej: reglas, detalles del premio)" rows="2"></textarea>
-        <input type="text" id="plantImageUrl" placeholder="URL de la foto 1 (ej: enlace de Google Imágenes, Imgur, etc.)">
-        <input type="text" id="plantImageUrl2" placeholder="URL de la foto 2 (opcional)">
-        <input type="text" id="plantImageUrl3" placeholder="URL de la foto 3 (opcional)">
+
+        <div class="upload-field">
+          <label>Foto 1</label>
+          <input type="file" id="plantImageFile1" accept="image/*">
+          <img id="plantImagePreview1" class="upload-preview hidden" alt="vista previa foto 1">
+        </div>
+        <div class="upload-field">
+          <label>Foto 2 (opcional)</label>
+          <input type="file" id="plantImageFile2" accept="image/*">
+          <img id="plantImagePreview2" class="upload-preview hidden" alt="vista previa foto 2">
+        </div>
+        <div class="upload-field">
+          <label>Foto 3 (opcional)</label>
+          <input type="file" id="plantImageFile3" accept="image/*">
+          <img id="plantImagePreview3" class="upload-preview hidden" alt="vista previa foto 3">
+        </div>
+
         <button class="btn" id="savePlantBtn">Guardar planta</button>
         <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
       </div>
@@ -656,6 +711,64 @@ function letterForNumber(n) {
   if (n <= 60) return "G";
   return "O";
 }
+
+// ============================================================
+// SUBIDA DE IMÁGENES REALES (fotos de plantas / comprobantes)
+// ============================================================
+// Este proyecto no usa Firebase Storage, así que las fotos se
+// comprimen en el navegador y se guardan como imagen embebida
+// (data URL) directamente en el documento de Firestore. Por eso
+// se reduce el tamaño/calidad: cada documento de Firestore tiene
+// un límite de 1MB, así que estas fotos deben quedar livianas.
+function fileToCompressedDataUrl(file, maxDim = 900, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    if (!file) { reject(new Error("No se seleccionó ningún archivo.")); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("No se pudo leer la imagen seleccionada."));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- Lightbox: ver comprobantes de pago en grande ----------
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImg = document.getElementById("lightboxImg");
+function openLightbox(src) {
+  if (!src) return;
+  lightboxImg.src = src;
+  lightboxOverlay.classList.remove("hidden");
+}
+document.getElementById("lightboxCloseBtn").addEventListener("click", () => {
+  lightboxOverlay.classList.add("hidden");
+  lightboxImg.src = "";
+});
+lightboxOverlay.addEventListener("click", (e) => {
+  if (e.target === lightboxOverlay) {
+    lightboxOverlay.classList.add("hidden");
+    lightboxImg.src = "";
+  }
+});
 </script>
 
 <script>
@@ -738,6 +851,7 @@ function cleanupAllListeners() {
   if (typeof adminChatUnsub === "function") adminChatUnsub();
   if (typeof plantsUnsub === "function") plantsUnsub();
   if (typeof gamesSelectorUnsub === "function") gamesSelectorUnsub();
+  if (typeof notificationsUnsub === "function") notificationsUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -881,6 +995,8 @@ function statusLabel(status) {
 
 function selectGame(gameId) {
   selectedGameId = gameId;
+  proofImageData = "";
+  document.getElementById("proofPreview").classList.add("hidden");
   document.getElementById("activeGamePanel").classList.remove("hidden");
   document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
 
@@ -979,10 +1095,20 @@ function listenToMyCard(gameId) {
       if (myCardData.paymentStatus !== "approved") {
         document.getElementById("pendingPaymentPanel").classList.remove("hidden");
         document.getElementById("cardPanel").classList.add("hidden");
-        document.getElementById("proofStatus").textContent =
-          myCardData.paymentProofUrl
-            ? "Comprobante recibido. Esperando aprobación del administrador..."
-            : "Aún no has subido tu comprobante.";
+
+        const preview = document.getElementById("proofPreview");
+        const statusEl = document.getElementById("proofStatus");
+        if (myCardData.paymentProofUrl) {
+          preview.src = myCardData.paymentProofUrl;
+          preview.classList.remove("hidden");
+          statusEl.textContent =
+            myCardData.paymentStatus === "rejected"
+              ? "❌ Tu comprobante fue rechazado. Sube una nueva foto."
+              : "Comprobante recibido. Esperando aprobación del administrador...";
+        } else {
+          preview.classList.add("hidden");
+          statusEl.textContent = "Aún no has subido tu comprobante.";
+        }
       } else {
         document.getElementById("pendingPaymentPanel").classList.add("hidden");
         document.getElementById("cardPanel").classList.remove("hidden");
@@ -1012,22 +1138,53 @@ document.getElementById("requestCardBtn").addEventListener("click", async () => 
   });
 });
 
+let proofImageData = "";
+
+document.getElementById("proofInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById("proofStatus");
+  const preview = document.getElementById("proofPreview");
+  statusEl.textContent = "Procesando foto...";
+  try {
+    proofImageData = await fileToCompressedDataUrl(file, 1000, 0.75);
+    preview.src = proofImageData;
+    preview.classList.remove("hidden");
+    statusEl.textContent = 'Foto lista. Presiona "Enviar comprobante".';
+  } catch (err) {
+    statusEl.textContent = "No se pudo procesar la foto: " + err.message;
+  }
+});
+
 document.getElementById("uploadProofBtn").addEventListener("click", async () => {
-  const urlInput = document.getElementById("proofInput");
-  const url = urlInput.value.trim();
-  if (!url || !myCardId) {
-    document.getElementById("proofStatus").textContent = "Pega el enlace de tu comprobante primero.";
+  const statusEl = document.getElementById("proofStatus");
+  if (!proofImageData || !myCardId) {
+    statusEl.textContent = "Primero toma o selecciona la foto de tu comprobante.";
     return;
   }
-  document.getElementById("proofStatus").textContent = "Guardando comprobante...";
+  statusEl.textContent = "Enviando comprobante...";
   try {
     await db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId).update({
-      paymentProofUrl: url,
+      paymentProofUrl: proofImageData,
       paymentStatus: "pending"
     });
-    document.getElementById("proofStatus").textContent = "Comprobante enviado. Esperando aprobación.";
+
+    // Notifica al instante al administrador de que hay un comprobante nuevo por revisar.
+    await db.collection("notifications").add({
+      type: "payment_proof",
+      gameId: selectedGameId,
+      gameName: (currentGameData && currentGameData.plantName) || "",
+      cardId: myCardId,
+      userId: currentUser.uid,
+      userName: currentUserData.name,
+      read: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    proofImageData = "";
+    statusEl.textContent = "✅ Comprobante enviado. El administrador fue notificado y revisará tu pago.";
   } catch (err) {
-    document.getElementById("proofStatus").textContent = "Error al guardar: " + err.message;
+    statusEl.textContent = "Error al enviar: " + err.message;
   }
 });
 
@@ -1139,6 +1296,24 @@ let adminChatUnsub = null;
 let plantsUnsub = null;
 let gamesSelectorUnsub = null;
 let lastAlertedWinnerId = null;
+let notificationsUnsub = null;
+let plantImageData = ["", "", ""];
+
+[1, 2, 3].forEach((n) => {
+  document.getElementById(`plantImageFile${n}`).addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const preview = document.getElementById(`plantImagePreview${n}`);
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file, 900, 0.7);
+      plantImageData[n - 1] = dataUrl;
+      preview.src = dataUrl;
+      preview.classList.remove("hidden");
+    } catch (err) {
+      alert("No se pudo procesar la foto " + n + ": " + err.message);
+    }
+  });
+});
 
 function initAdminView() {
   document.getElementById("gameControlPanel").classList.add("hidden");
@@ -1146,6 +1321,60 @@ function initAdminView() {
   selectedAdminGameId = null;
   loadPlants();
   loadGamesSelector();
+  listenNotifications();
+}
+
+function listenNotifications() {
+  if (notificationsUnsub) notificationsUnsub();
+  notificationsUnsub = db.collection("notifications")
+    .where("read", "==", false)
+    .onSnapshot((snap) => {
+      const list = [];
+      snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      renderNotifications(list);
+    });
+}
+
+function renderNotifications(list) {
+  const badge = document.getElementById("notifBadge");
+  const box = document.getElementById("notificationsList");
+
+  if (!list.length) {
+    badge.classList.add("hidden");
+    box.innerHTML = `<p class="empty-state">No hay notificaciones pendientes.</p>`;
+    return;
+  }
+
+  badge.classList.remove("hidden");
+  badge.textContent = list.length;
+  box.innerHTML = "";
+
+  list.forEach((n) => {
+    const div = document.createElement("div");
+    div.className = "notif-item";
+    div.innerHTML = `
+      <div>
+        <strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲
+        <div style="font-size:0.8rem;color:var(--gray-600);">Sorteo: ${n.gameName || "—"}</div>
+      </div>
+      <button class="btn small" data-goto-game="${n.gameId}" data-notif-id="${n.id}">Revisar</button>
+    `;
+    box.appendChild(div);
+  });
+
+  box.querySelectorAll("[data-goto-game]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const gameId = btn.dataset.gotoGame;
+      const notifId = btn.dataset.notifId;
+      document.getElementById("gameSelector").value = gameId;
+      selectAdminGame(gameId);
+      try {
+        await db.collection("notifications").doc(notifId).update({ read: true });
+      } catch (err) { /* noop */ }
+      document.getElementById("gameControlPanel").scrollIntoView({ behavior: "smooth" });
+    });
+  });
 }
 
 function loadPlants() {
@@ -1199,12 +1428,24 @@ function loadPlants() {
 function editPlant(id) {
   const p = plantsCache[id];
   const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
+  plantImageData = [images[0] || "", images[1] || "", images[2] || ""];
+
   document.getElementById("plantEditId").value = id;
   document.getElementById("plantName").value = p.name;
   document.getElementById("plantDesc").value = p.description || "";
-  document.getElementById("plantImageUrl").value = images[0] || "";
-  document.getElementById("plantImageUrl2").value = images[1] || "";
-  document.getElementById("plantImageUrl3").value = images[2] || "";
+
+  [1, 2, 3].forEach((n) => {
+    const preview = document.getElementById(`plantImagePreview${n}`);
+    const src = plantImageData[n - 1];
+    document.getElementById(`plantImageFile${n}`).value = "";
+    if (src) {
+      preview.src = src;
+      preview.classList.remove("hidden");
+    } else {
+      preview.classList.add("hidden");
+    }
+  });
+
   document.getElementById("cancelEditBtn").classList.remove("hidden");
   document.getElementById("plantForm").scrollIntoView({ behavior: "smooth" });
 }
@@ -1213,9 +1454,13 @@ document.getElementById("cancelEditBtn").addEventListener("click", () => {
   document.getElementById("plantEditId").value = "";
   document.getElementById("plantName").value = "";
   document.getElementById("plantDesc").value = "";
-  document.getElementById("plantImageUrl").value = "";
-  document.getElementById("plantImageUrl2").value = "";
-  document.getElementById("plantImageUrl3").value = "";
+  plantImageData = ["", "", ""];
+  [1, 2, 3].forEach((n) => {
+    document.getElementById(`plantImageFile${n}`).value = "";
+    const preview = document.getElementById(`plantImagePreview${n}`);
+    preview.src = "";
+    preview.classList.add("hidden");
+  });
   document.getElementById("cancelEditBtn").classList.add("hidden");
 });
 
@@ -1228,13 +1473,14 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
   const id = document.getElementById("plantEditId").value;
   const name = document.getElementById("plantName").value.trim();
   const description = document.getElementById("plantDesc").value.trim();
-  const imageUrl = document.getElementById("plantImageUrl").value.trim();
-  const imageUrl2 = document.getElementById("plantImageUrl2").value.trim();
-  const imageUrl3 = document.getElementById("plantImageUrl3").value.trim();
-  const images = [imageUrl, imageUrl2, imageUrl3].filter(Boolean);
+  const images = plantImageData.filter(Boolean);
 
   if (!name) {
     alert("El nombre de la planta es obligatorio.");
+    return;
+  }
+  if (!images.length) {
+    alert("Sube al menos una foto de la planta.");
     return;
   }
 
@@ -1486,7 +1732,7 @@ function renderParticipants(gameId, snap) {
       <td>${c.userName}${c.completed ? ' <span class="badge-winner">🏆</span>' : ""}</td>
       <td>${c.userEmail}</td>
       <td>${paymentStatusLabel(c.paymentStatus)}</td>
-      <td>${c.paymentProofUrl ? `<a href="${c.paymentProofUrl}" target="_blank">Ver comprobante</a>` : "—"}</td>
+      <td>${c.paymentProofUrl ? `<img class="proof-thumb" src="${c.paymentProofUrl}" data-view-proof="${c.paymentProofUrl.replace(/"/g, '&quot;')}" alt="comprobante">` : "—"}</td>
       <td>${c.paymentStatus === "approved" ? "Cartón activo" : "Sin activar"}</td>
       <td>
         ${c.paymentStatus !== "approved"
@@ -1496,6 +1742,10 @@ function renderParticipants(gameId, snap) {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll("[data-view-proof]").forEach((imgEl) => {
+    imgEl.addEventListener("click", () => openLightbox(imgEl.dataset.viewProof));
   });
 
   tbody.querySelectorAll("[data-approve]").forEach((btn) => {
@@ -1551,6 +1801,11 @@ async function sendAdminChatMessage() {
   });
 }
 </script>
+
+<div class="lightbox-overlay hidden" id="lightboxOverlay">
+  <button class="btn red lightbox-close" id="lightboxCloseBtn">Cerrar ✕</button>
+  <img id="lightboxImg" src="" alt="comprobante ampliado">
+</div>
 
 </body>
 </html>
