@@ -176,6 +176,16 @@ button { cursor: pointer; font-family: inherit; }
 }
 .bingo-cell.marked { background: var(--green-500); color: white; border-color: var(--green-700); }
 .bingo-cell.free { background: var(--amber-500); color: white; font-size: 0.75rem; }
+.bingo-cell.current-call {
+  border-color: var(--amber-500);
+  box-shadow: 0 0 0 3px rgba(217,155,63,0.5);
+  animation: currentCallPulse 1.2s infinite;
+}
+@keyframes currentCallPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(217,155,63,0.65); }
+  70%  { box-shadow: 0 0 0 10px rgba(217,155,63,0); }
+  100% { box-shadow: 0 0 0 0 rgba(217,155,63,0); }
+}
 
 /* ---------- Called number display ---------- */
 .current-number-display { text-align: center; padding: 20px; }
@@ -1252,7 +1262,9 @@ function renderMyCards() {
         <p class="empty-state hidden" data-win-msg="${card.id}"></p>
       `;
       container.appendChild(panel);
-      renderBingoCard(card.data.numbers, card.data.marked, card.id);
+      const calledNums = (currentGameData && currentGameData.calledNumbers) || [];
+      const currentNumber = calledNums.length ? calledNums[calledNums.length - 1] : null;
+      renderBingoCard(card.data.numbers, card.data.marked, card.id, currentNumber);
       if (card.data.completed) {
         const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
         const msgEl = panel.querySelector(`[data-win-msg="${card.id}"]`);
@@ -1338,7 +1350,7 @@ async function handleUploadProof(cardId) {
   }
 }
 
-function renderBingoCard(numbers, marked, cardId) {
+function renderBingoCard(numbers, marked, cardId, currentNumber) {
   const el = document.querySelector(`[data-bingo-card="${cardId}"]`);
   if (!el) return;
   el.innerHTML = "";
@@ -1351,8 +1363,12 @@ function renderBingoCard(numbers, marked, cardId) {
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 5; col++) {
       const val = numbers[row][col];
+      const isCurrent = currentNumber != null && val === currentNumber;
       const cell = document.createElement("div");
-      cell.className = "bingo-cell" + (marked[row][col] ? " marked" : "") + (val === "FREE" ? " free" : "");
+      cell.className = "bingo-cell"
+        + (marked[row][col] ? " marked" : "")
+        + (val === "FREE" ? " free" : "")
+        + (isCurrent ? " current-call" : "");
       cell.textContent = val;
       el.appendChild(cell);
     }
@@ -1361,6 +1377,7 @@ function renderBingoCard(numbers, marked, cardId) {
 
 async function updateAllCardMarks(calledNumbers) {
   const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
+  const currentNumber = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
 
   for (const card of myCards) {
     if (card.data.paymentStatus !== "approved") continue;
@@ -1370,7 +1387,7 @@ async function updateAllCardMarks(calledNumbers) {
     const nowWinning = checkPattern(newMarked, pattern);
 
     card.data.marked = newMarked;
-    renderBingoCard(card.data.numbers, newMarked, card.id);
+    renderBingoCard(card.data.numbers, newMarked, card.id, currentNumber);
 
     const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(card.id);
     cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
@@ -1409,8 +1426,8 @@ async function tryDeclareWinner(cardRef) {
   }
 }
 
-// Crea una notificación persistente para todos los jugadores que tengan
-// al menos un cartón en este sorteo, avisando quién ganó.
+// Crea una notificación persistente para los jugadores del sorteo (avisando quién ganó)
+// y también para el administrador (para que sepa que hubo un ganador).
 async function notifyAllParticipantsOfWinner() {
   try {
     const cardsSnap = await db.collection("games").doc(selectedGameId).collection("cards").get();
@@ -1425,6 +1442,7 @@ async function notifyAllParticipantsOfWinner() {
       pattern: (currentGameData && currentGameData.winPattern) || "fullCard",
       recipientIds,
       readBy: [],
+      read: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (err) {
@@ -1538,9 +1556,12 @@ function renderNotifications(list) {
   list.forEach((n) => {
     const div = document.createElement("div");
     div.className = "notif-item";
+    const message = n.type === "game_winner"
+      ? `🏆 <strong>${n.winnerUserName || "Un jugador"}</strong> completó el patrón y ganó el sorteo`
+      : `<strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲`;
     div.innerHTML = `
       <div>
-        <strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲
+        ${message}
         <div style="font-size:0.8rem;color:var(--gray-600);">Sorteo: ${n.gameName || "—"}</div>
       </div>
       <button class="btn small" data-goto-game="${n.gameId}" data-notif-id="${n.id}">Revisar</button>
