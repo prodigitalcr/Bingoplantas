@@ -349,6 +349,7 @@ th { background: var(--green-100); color: var(--green-900); }
       <form id="registerForm" class="hidden">
         <input type="text" id="registerName" placeholder="Nombre completo" required>
         <input type="email" id="registerEmail" placeholder="Correo electrónico" required>
+        <input type="tel" id="registerPhone" placeholder="Número de WhatsApp (ej: 8888-7777)" required>
         <input type="password" id="registerPassword" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
         <button class="btn" type="submit">Crear cuenta</button>
       </form>
@@ -374,6 +375,11 @@ th { background: var(--green-100); color: var(--green-900); }
   </div>
 
   <div class="container">
+
+    <div class="card-panel" id="userNotificationsPanel">
+      <h2>🔔 Notificaciones <span class="notif-badge hidden" id="userNotifBadge">0</span></h2>
+      <div id="userNotificationsList"><p class="empty-state">No hay notificaciones nuevas.</p></div>
+    </div>
 
     <div class="card-panel" id="gameSelectorPanel">
       <h2>Sorteos disponibles</h2>
@@ -716,6 +722,15 @@ function letterForNumber(n) {
   return "O";
 }
 
+// Construye un enlace de "click-to-chat" de WhatsApp con un mensaje pre-escrito.
+// El administrador puede editar el mensaje dentro de WhatsApp antes de enviarlo.
+function whatsappLink(phone, message) {
+  if (!phone) return null;
+  const digits = String(phone).replace(/[^\d]/g, "");
+  if (!digits) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
 // ============================================================
 // SUBIDA DE IMÁGENES REALES (fotos de plantas / comprobantes)
 // ============================================================
@@ -850,6 +865,7 @@ function cleanupAllListeners() {
   if (typeof cardUnsub === "function") cardUnsub();
   if (typeof chatUnsub === "function") chatUnsub();
   if (typeof gamesListUnsub === "function") gamesListUnsub();
+  if (typeof userNotificationsUnsub === "function") userNotificationsUnsub();
   if (typeof adminGameUnsub === "function") adminGameUnsub();
   if (typeof adminCardsUnsub === "function") adminCardsUnsub();
   if (typeof adminChatUnsub === "function") adminChatUnsub();
@@ -915,12 +931,13 @@ registerForm.addEventListener("submit", async (e) => {
   clearMsgs();
   const name = document.getElementById("registerName").value.trim();
   const email = document.getElementById("registerEmail").value.trim();
+  const phone = document.getElementById("registerPhone").value.trim();
   const password = document.getElementById("registerPassword").value;
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     const role = ADMIN_EMAILS.includes(email.toLowerCase()) ? "admin" : "user";
     await db.collection("users").doc(cred.user.uid).set({
-      name, email, role,
+      name, email, phone, role,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (err) {
@@ -956,6 +973,7 @@ let myCards = [];               // lista de TODOS los cartones del jugador en el
 let proofImageDataByCard = {};  // foto de comprobante pendiente de enviar, por cartón
 let currentGameData = null;
 let lastAnnouncedWinnerId = null;
+let userNotificationsUnsub = null;
 
 function initUserView() {
   // Reiniciar estado de paneles
@@ -966,6 +984,7 @@ function initUserView() {
   proofImageDataByCard = {};
 
   if (gamesListUnsub) gamesListUnsub();
+  listenUserNotifications();
   gamesListUnsub = db.collection("games")
     .where("status", "in", ["open", "running"])
     .onSnapshot((snap) => {
@@ -996,6 +1015,68 @@ function initUserView() {
 
 function statusLabel(status) {
   return { open: "Inscripciones abiertas", running: "¡En juego!", finished: "Finalizado" }[status] || status;
+}
+
+// ---------- Notificaciones persistentes: avisar a todos los jugadores cuando hay un cartón ganador ----------
+function listenUserNotifications() {
+  if (userNotificationsUnsub) userNotificationsUnsub();
+  userNotificationsUnsub = db.collection("notifications")
+    .where("recipientIds", "array-contains", currentUser.uid)
+    .onSnapshot((snap) => {
+      const list = [];
+      snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      renderUserNotifications(list);
+    });
+}
+
+function renderUserNotifications(list) {
+  const badge = document.getElementById("userNotifBadge");
+  const box = document.getElementById("userNotificationsList");
+
+  if (!list.length) {
+    badge.classList.add("hidden");
+    box.innerHTML = `<p class="empty-state">No hay notificaciones nuevas.</p>`;
+    return;
+  }
+
+  const unreadCount = list.filter((n) => !(n.readBy || []).includes(currentUser.uid)).length;
+  if (unreadCount) {
+    badge.classList.remove("hidden");
+    badge.textContent = unreadCount;
+  } else {
+    badge.classList.add("hidden");
+  }
+
+  box.innerHTML = "";
+  list.slice(0, 15).forEach((n) => {
+    const isRead = (n.readBy || []).includes(currentUser.uid);
+    const div = document.createElement("div");
+    div.className = "notif-item";
+    if (isRead) div.style.opacity = "0.6";
+    div.innerHTML = `
+      <div>
+        <strong>🏆 ${n.winnerUserName || "Alguien"}</strong> ganó el sorteo de "${n.gameName || "—"}"
+        <div style="font-size:0.8rem;color:var(--gray-600);">Patrón: ${patternLabel(n.pattern)}</div>
+      </div>
+      <button class="btn small" data-goto-user-game="${n.gameId}" data-user-notif-id="${n.id}">Ver sorteo</button>
+    `;
+    box.appendChild(div);
+  });
+
+  box.querySelectorAll("[data-goto-user-game]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const gameId = btn.dataset.gotoUserGame;
+      const notifId = btn.dataset.userNotifId;
+      selectGame(gameId);
+      document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
+      try {
+        await db.collection("notifications").doc(notifId).update({
+          readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+      } catch (err) { /* noop */ }
+    });
+  });
 }
 
 function selectGame(gameId) {
@@ -1302,22 +1383,52 @@ async function updateAllCardMarks(calledNumbers) {
 
 async function tryDeclareWinner(cardRef) {
   const gameRef = db.collection("games").doc(selectedGameId);
+  let becameWinner = false;
   try {
     await db.runTransaction(async (tx) => {
       const gameDoc = await tx.get(gameRef);
       const gameData = gameDoc.data();
       if (gameData.status === "finished" || gameData.winnerUserId) return;
+      becameWinner = true;
       tx.update(gameRef, {
         status: "finished",
         winnerUserId: currentUser.uid,
         winnerUserName: currentUserData.name,
+        winnerUserPhone: currentUserData.phone || null,
         winnerCardId: cardRef.id,
         finishedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       tx.update(cardRef, { completed: true, completedAt: firebase.firestore.FieldValue.serverTimestamp() });
     });
+
+    if (becameWinner) {
+      await notifyAllParticipantsOfWinner();
+    }
   } catch (err) {
     console.error("Error en transacción de ganador:", err);
+  }
+}
+
+// Crea una notificación persistente para todos los jugadores que tengan
+// al menos un cartón en este sorteo, avisando quién ganó.
+async function notifyAllParticipantsOfWinner() {
+  try {
+    const cardsSnap = await db.collection("games").doc(selectedGameId).collection("cards").get();
+    const recipientIds = [...new Set(cardsSnap.docs.map((d) => d.data().userId).filter(Boolean))];
+    if (!recipientIds.length) return;
+    await db.collection("notifications").add({
+      type: "game_winner",
+      gameId: selectedGameId,
+      gameName: (currentGameData && currentGameData.plantName) || "",
+      winnerUserId: currentUser.uid,
+      winnerUserName: currentUserData.name,
+      pattern: (currentGameData && currentGameData.winPattern) || "fullCard",
+      recipientIds,
+      readBy: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (err) {
+    console.error("No se pudo notificar a los participantes del sorteo:", err);
   }
 }
 
@@ -1721,11 +1832,21 @@ function renderAdminGame(gameId, g) {
   if (g.status === "finished" && g.winnerUserName) {
     banner.classList.remove("hidden");
     banner.classList.add("winner-alert-flash");
+
+    const waLink = whatsappLink(
+      g.winnerUserPhone,
+      `¡Hola ${g.winnerUserName}! 🌿 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu planta 🎉`
+    );
+    const waButton = waLink
+      ? `<a class="btn small" style="width:auto;background:#25D366;display:inline-block;text-decoration:none;margin-top:8px;" target="_blank" rel="noopener" href="${waLink}">📲 Enviar WhatsApp al ganador</a>`
+      : `<p style="font-size:0.8rem;color:var(--gray-600);margin-top:8px;">Este jugador no tiene número de WhatsApp registrado.</p>`;
+
     banner.innerHTML = `
       <span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>
       <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
-        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega de la planta por el chat de abajo.
+        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega de la planta por WhatsApp o por el chat de abajo.
       </p>
+      ${waButton}
     `;
     callBtn.disabled = true;
     document.getElementById("adminChatPanel").classList.remove("hidden");
@@ -1734,7 +1855,7 @@ function renderAdminGame(gameId, g) {
     // Alerta instantánea al administrador la primera vez que se detecta un ganador
     if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
       lastAlertedWinnerId = g.winnerUserId;
-      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat para coordinar la entrega de la planta.`);
+      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega de la planta.`);
     }
   } else {
     banner.classList.add("hidden");
