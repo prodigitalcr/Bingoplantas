@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo de Plantas 🌿</title>
+
+<style>
+:root {
+  --green-900: #1b3a2b;
+  --green-700: #2f5d3f;
+  --green-500: #4a8b5c;
+  --green-300: #8fc79f;
+  --green-100: #eaf6ed;
+  --amber-500: #d99b3f;
+  --red-500: #c0524a;
+  --gray-100: #f6f7f5;
+  --gray-300: #dfe3e0;
+  --gray-600: #6b756f;
+  --gray-900: #22261f;
+  --radius: 10px;
+  --shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+a { color: var(--green-700); }
+
+.hidden { display: none !important; }
+
+.topbar {
+  background: var(--green-900);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar h1 {
+  font-size: 1.2rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar .user-info { font-size: 0.85rem; opacity: 0.9; margin-right: 12px; }
+.topbar button.logout {
+  background: var(--red-500);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card-panel {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+h2 { color: var(--green-900); margin-top: 0; }
+h3 { color: var(--green-700); }
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--green-900), var(--green-500));
+}
+.auth-box {
+  background: white;
+  padding: 32px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 360px;
+  max-width: 90vw;
+}
+.auth-box h1 {
+  color: var(--green-900);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.auth-box p.subtitle {
+  text-align: center;
+  color: var(--gray-600);
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+button { cursor: pointer; font-family: inherit; }
+
+.btn {
+  background: var(--green-700);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  width: 100%;
+}
+.btn:hover { background: var(--green-900); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn.secondary { background: var(--gray-600); }
+.btn.amber { background: var(--amber-500); }
+.btn.red { background: var(--red-500); }
+.btn.small { width: auto; padding: 6px 12px; font-size: 0.85rem; }
+
+.tab-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+.tab-toggle span { cursor: pointer; color: var(--green-700); text-decoration: underline; }
+
+.error-msg { color: var(--red-500); font-size: 0.85rem; margin-bottom: 10px; min-height: 1em; }
+.success-msg { color: var(--green-700); font-size: 0.85rem; margin-bottom: 10px; }
+
+/* ---------- Bingo grid ---------- */
+.bingo-card {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.bingo-header {
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  background: var(--green-700);
+  border-radius: 6px;
+  padding: 8px 0;
+}
+.bingo-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--gray-300);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  background: white;
+  transition: all 0.2s;
+}
+.bingo-cell.marked { background: var(--green-500); color: white; border-color: var(--green-700); }
+.bingo-cell.free { background: var(--amber-500); color: white; font-size: 0.75rem; }
+
+/* ---------- Called number display ---------- */
+.current-number-display { text-align: center; padding: 20px; }
+.current-number-display .big-number {
+  font-size: 4rem;
+  font-weight: bold;
+  color: var(--green-900);
+  background: var(--green-100);
+  display: inline-block;
+  padding: 10px 30px;
+  border-radius: 16px;
+  border: 3px solid var(--green-500);
+}
+.called-history { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; justify-content: center; }
+.called-chip {
+  background: var(--green-300);
+  color: var(--green-900);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ---------- Plant list / gallery ---------- */
+.plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.plant-item { border: 1px solid var(--gray-300); border-radius: var(--radius); overflow: hidden; background: white; }
+.plant-item img { width: 100%; height: 130px; object-fit: cover; background: var(--gray-300); }
+.plant-item .plant-body { padding: 10px; }
+.plant-item h4 { margin: 0 0 4px 0; font-size: 1rem; color: var(--green-900); }
+.plant-item p { margin: 0; font-size: 0.8rem; color: var(--gray-600); }
+.status-badge { display: inline-block; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; margin-top: 6px; font-weight: bold; }
+.status-open { background: var(--green-100); color: var(--green-700); }
+.status-running { background: #fff3d6; color: var(--amber-500); }
+.status-finished { background: #f3d6d6; color: var(--red-500); }
+
+/* ---------- Tables ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--gray-300); text-align: left; }
+th { background: var(--green-100); color: var(--green-900); }
+
+/* ---------- Chat ---------- */
+.chat-box {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: var(--gray-100);
+  margin-bottom: 10px;
+}
+.chat-msg { margin-bottom: 8px; padding: 8px 12px; border-radius: 12px; max-width: 75%; font-size: 0.9rem; }
+.chat-msg.mine { background: var(--green-500); color: white; margin-left: auto; }
+.chat-msg.theirs { background: white; border: 1px solid var(--gray-300); }
+.chat-input-row { display: flex; gap: 8px; }
+.chat-input-row input { margin-bottom: 0; }
+.chat-input-row button { width: auto; padding: 10px 16px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.badge-winner { background: var(--amber-500); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+.empty-state { text-align: center; color: var(--gray-600); padding: 30px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- VISTA: AUTENTICACIÓN (login / registro)                       -->
+<!-- ============================================================ -->
+<div id="authView">
+  <div class="auth-wrapper">
+    <div class="auth-box">
+      <h1>🌿 Bingo de Plantas</h1>
+      <p class="subtitle" id="formSubtitle">Inicia sesión para participar</p>
+
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Correo electrónico" required>
+        <input type="password" id="loginPassword" placeholder="Contraseña" required>
+        <button class="btn" type="submit">Ingresar</button>
+      </form>
+
+      <form id="registerForm" class="hidden">
+        <input type="text" id="registerName" placeholder="Nombre completo" required>
+        <input type="email" id="registerEmail" placeholder="Correo electrónico" required>
+        <input type="password" id="registerPassword" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
+        <button class="btn" type="submit">Crear cuenta</button>
+      </form>
+
+      <div class="tab-toggle">
+        <span id="showRegister">Crear cuenta nueva</span>
+        <span id="showLogin" class="hidden">Ya tengo cuenta</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VISTA: DASHBOARD DE USUARIO                                   -->
+<!-- ============================================================ -->
+<div id="userView" class="hidden">
+  <div class="topbar">
+    <h1>🌿 Bingo de Plantas</h1>
+    <div>
+      <span class="user-info" id="userInfoUser"></span>
+      <button class="logout" id="logoutBtnUser">Salir</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="card-panel" id="gameSelectorPanel">
+      <h2>Sorteos disponibles</h2>
+      <div id="gamesList" class="plant-grid"></div>
+    </div>
+
+    <div id="activeGamePanel" class="hidden">
+
+      <div class="card-panel">
+        <h2 id="activePlantTitle">🌱 Planta en juego</h2>
+        <div class="grid-2">
+          <div>
+            <img id="activePlantImg" src="" alt="planta" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;">
+            <p id="activePlantDesc" style="color:var(--gray-600);"></p>
+          </div>
+          <div class="current-number-display">
+            <p style="margin:0 0 8px 0;color:var(--gray-600);">Número cayendo:</p>
+            <div class="big-number" id="currentNumberBig">-</div>
+            <div class="called-history" id="calledHistory"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel hidden" id="noCardPanel">
+        <h3>Aún no tienes cartón para este sorteo</h3>
+        <p>Solicita tu cartón virtual y sube el comprobante de pago para participar.</p>
+        <button class="btn" id="requestCardBtn">Solicitar cartón virtual</button>
+      </div>
+
+      <div class="card-panel hidden" id="pendingPaymentPanel">
+        <h3>Tu cartón fue generado ✅</h3>
+        <p>Sube tu comprobante de pago a cualquier servicio (WhatsApp, Google Drive, Imgur, etc.), copia el enlace público y pégalo aquí para que el administrador lo apruebe.</p>
+        <input type="url" id="proofInput" placeholder="https://... (enlace a tu comprobante)">
+        <button class="btn amber" id="uploadProofBtn">Enviar comprobante</button>
+        <p id="proofStatus" style="font-size:0.85rem;color:var(--gray-600);"></p>
+      </div>
+
+      <div class="card-panel hidden" id="cardPanel">
+        <h3>Tu cartón virtual</h3>
+        <div class="bingo-card" id="bingoCard"></div>
+        <p class="empty-state hidden" id="winMsg"></p>
+      </div>
+
+    </div>
+
+    <div class="card-panel hidden" id="chatPanel">
+      <h3>💬 Chat con el administrador — ¡Ganaste esta planta!</h3>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
+        <button class="btn small" id="sendChatBtn">Enviar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VISTA: PANEL DE ADMINISTRADOR                                 -->
+<!-- ============================================================ -->
+<div id="adminView" class="hidden">
+  <div class="topbar">
+    <h1>🌿 Bingo de Plantas — Admin</h1>
+    <div>
+      <span class="user-info" id="userInfoAdmin"></span>
+      <button class="logout" id="logoutBtnAdmin">Salir</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="card-panel">
+      <h2>🪴 Base de plantas a sortear</h2>
+      <p style="color:var(--gray-600);font-size:0.9rem;">Registra hasta ~20 plantas. Cada una podrá usarse para crear un sorteo.</p>
+
+      <div id="plantForm">
+        <input type="hidden" id="plantEditId">
+        <input type="text" id="plantName" placeholder="Nombre de la planta (ej: Monstera Deliciosa)">
+        <textarea id="plantDesc" placeholder="Descripción breve" rows="2"></textarea>
+        <input type="text" id="plantImageUrl" placeholder="URL de la imagen (ej: enlace de Google Imágenes, Imgur, etc.)">
+        <button class="btn" id="savePlantBtn">Guardar planta</button>
+        <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
+      </div>
+
+      <div class="plant-grid" id="plantsList" style="margin-top:20px;"></div>
+    </div>
+
+    <div class="card-panel">
+      <h2>🎯 Sorteos</h2>
+      <div class="grid-2">
+        <div>
+          <select id="plantSelectForGame"></select>
+          <button class="btn" id="createGameBtn">Crear nuevo sorteo con esta planta</button>
+        </div>
+        <div>
+          <select id="gameSelector"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-panel hidden" id="gameControlPanel">
+      <h2 id="gameControlTitle">Sorteo</h2>
+
+      <div class="current-number-display">
+        <div class="big-number" id="adminCurrentNumber">-</div>
+        <div class="called-history" id="adminCalledHistory"></div>
+      </div>
+
+      <div style="text-align:center;margin-bottom:16px;">
+        <button class="btn amber" id="callNumberBtn" style="width:auto;padding:12px 30px;">🎲 Cantar siguiente número</button>
+        <button class="btn red" id="resetGameBtn" style="width:auto;">Reiniciar sorteo</button>
+      </div>
+
+      <h3>Participantes</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Pago</th>
+            <th>Comprobante</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="participantsTable"></tbody>
+      </table>
+
+      <div class="hidden" id="winnerBanner" style="margin-top:16px;"></div>
+    </div>
+
+    <div class="card-panel hidden" id="adminChatPanel">
+      <h3>💬 Chat con el ganador</h3>
+      <div class="chat-box" id="adminChatBox"></div>
+      <div class="chat-input-row">
+        <input type="text" id="adminChatInput" placeholder="Escribe un mensaje...">
+        <button class="btn small" id="adminSendChatBtn">Enviar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FIREBASE SDK (compat, vía CDN — sin build tools)               -->
+<!-- ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN DE FIREBASE
+// ============================================================
+// 1. Ve a https://console.firebase.google.com
+// 2. Crea un proyecto nuevo (gratis, plan Spark es suficiente)
+// 3. Activa: Authentication (Email/Password) y Firestore Database
+//    (Storage NO es necesario: las imágenes y comprobantes se guardan como enlaces URL)
+// 4. Ve a "Configuración del proyecto" > "Tus apps" > "Web" y copia tu config aquí:
+// ============================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCFNrGlT6IcBeIm3Dy2nKybswHHiwgfWKU",
+  authDomain: "bingo-2179a.firebaseapp.com",
+  projectId: "bingo-2179a",
+  storageBucket: "bingo-2179a.firebasestorage.app",
+  messagingSenderId: "610298172226",
+  appId: "1:610298172226:web:a1b57f0a12a96b48c66edb",
+  measurementId: "G-DP0KCPY6V4"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+// Nota: este proyecto NO usa Firebase Storage. Las imágenes de plantas y los
+// comprobantes de pago se manejan como enlaces (URL) guardados directamente en Firestore.
+
+db.enablePersistence().catch((err) => {
+  console.warn("Persistencia offline no disponible:", err.code);
+});
+
+// Email(s) del/los administradores iniciales.
+// El primer usuario que se registre con uno de estos correos será admin automáticamente.
+const ADMIN_EMAILS = [
+  "tubingoplant@canaan.com"
+];
+</script>
+
+<script>
+// ============================================================
+// UTILIDADES DEL CARTÓN DE BINGO (75 bolas, columnas B-I-N-G-O)
+// ============================================================
+
+function generateBingoCard() {
+  const ranges = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75]];
+  const numbers = [[], [], [], [], []];
+  const marked = [[], [], [], [], []];
+
+  for (let col = 0; col < 5; col++) {
+    const [min, max] = ranges[col];
+    const pool = [];
+    for (let n = min; n <= max; n++) pool.push(n);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    for (let row = 0; row < 5; row++) {
+      numbers[row][col] = pool[row];
+      marked[row][col] = false;
+    }
+  }
+
+  numbers[2][2] = "FREE";
+  marked[2][2] = true;
+
+  return { numbers, marked };
+}
+
+function recalculateMarks(numbers, calledNumbers) {
+  const calledSet = new Set(calledNumbers);
+  const marked = [[], [], [], [], []];
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      const val = numbers[row][col];
+      marked[row][col] = val === "FREE" || calledSet.has(val);
+    }
+  }
+  return marked;
+}
+
+function isCardComplete(marked) {
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      if (!marked[row][col]) return false;
+    }
+  }
+  return true;
+}
+
+const BINGO_LETTERS = ["B", "I", "N", "G", "O"];
+
+function letterForNumber(n) {
+  if (n <= 15) return "B";
+  if (n <= 30) return "I";
+  if (n <= 45) return "N";
+  if (n <= 60) return "G";
+  return "O";
+}
+</script>
+
+<script>
+// ============================================================
+// ROUTER: muestra la vista correcta según sesión y rol
+// ============================================================
+
+const authView = document.getElementById("authView");
+const userView = document.getElementById("userView");
+const adminView = document.getElementById("adminView");
+
+function showView(view) {
+  authView.classList.add("hidden");
+  userView.classList.add("hidden");
+  adminView.classList.add("hidden");
+  view.classList.remove("hidden");
+}
+
+let currentUser = null;
+let currentUserData = null;
+
+auth.onAuthStateChanged(async (user) => {
+  cleanupAllListeners();
+
+  if (!user) {
+    currentUser = null;
+    currentUserData = null;
+    showView(authView);
+    return;
+  }
+
+  currentUser = user;
+  const doc = await db.collection("users").doc(user.uid).get();
+  currentUserData = doc.data();
+
+  if (!currentUserData) {
+    // Documento de usuario no existe todavía (raro, pero por seguridad cerramos sesión)
+    auth.signOut();
+    return;
+  }
+
+  if (currentUserData.role === "admin") {
+    document.getElementById("userInfoAdmin").textContent = `${currentUserData.name} (Administrador)`;
+    showView(adminView);
+    initAdminView();
+  } else {
+    document.getElementById("userInfoUser").textContent = `${currentUserData.name} (${currentUserData.email})`;
+    showView(userView);
+    initUserView();
+  }
+});
+
+function cleanupAllListeners() {
+  if (typeof gameUnsub === "function") gameUnsub();
+  if (typeof cardUnsub === "function") cardUnsub();
+  if (typeof chatUnsub === "function") chatUnsub();
+  if (typeof gamesListUnsub === "function") gamesListUnsub();
+  if (typeof adminGameUnsub === "function") adminGameUnsub();
+  if (typeof adminCardsUnsub === "function") adminCardsUnsub();
+  if (typeof adminChatUnsub === "function") adminChatUnsub();
+  if (typeof plantsUnsub === "function") plantsUnsub();
+  if (typeof gamesSelectorUnsub === "function") gamesSelectorUnsub();
+}
+
+document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
+document.getElementById("logoutBtnAdmin").addEventListener("click", () => auth.signOut());
+</script>
+
+<script>
+// ============================================================
+// AUTENTICACIÓN (login / registro)
+// ============================================================
+
+const errorMsg = document.getElementById("errorMsg");
+const successMsg = document.getElementById("successMsg");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const showRegister = document.getElementById("showRegister");
+const showLogin = document.getElementById("showLogin");
+const formSubtitle = document.getElementById("formSubtitle");
+
+function clearMsgs() {
+  errorMsg.textContent = "";
+  successMsg.textContent = "";
+}
+
+showRegister.addEventListener("click", () => {
+  loginForm.classList.add("hidden");
+  registerForm.classList.remove("hidden");
+  showRegister.classList.add("hidden");
+  showLogin.classList.remove("hidden");
+  formSubtitle.textContent = "Crea tu cuenta para participar";
+  clearMsgs();
+});
+
+showLogin.addEventListener("click", () => {
+  loginForm.classList.remove("hidden");
+  registerForm.classList.add("hidden");
+  showLogin.classList.add("hidden");
+  showRegister.classList.remove("hidden");
+  formSubtitle.textContent = "Inicia sesión para participar";
+  clearMsgs();
+});
+
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearMsgs();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (err) {
+    errorMsg.textContent = traducirError(err.code);
+  }
+});
+
+registerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearMsgs();
+  const name = document.getElementById("registerName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim();
+  const password = document.getElementById("registerPassword").value;
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    const role = ADMIN_EMAILS.includes(email.toLowerCase()) ? "admin" : "user";
+    await db.collection("users").doc(cred.user.uid).set({
+      name, email, role,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (err) {
+    errorMsg.textContent = traducirError(err.code);
+  }
+});
+
+function traducirError(code) {
+  const map = {
+    "auth/email-already-in-use": "Este correo ya está registrado.",
+    "auth/invalid-email": "Correo inválido.",
+    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+    "auth/user-not-found": "No existe una cuenta con ese correo.",
+    "auth/wrong-password": "Contraseña incorrecta.",
+    "auth/invalid-credential": "Correo o contraseña incorrectos.",
+    "auth/too-many-requests": "Demasiados intentos. Intenta más tarde."
+  };
+  return map[code] || "Ocurrió un error. Intenta de nuevo.";
+}
+</script>
+
+<script>
+// ============================================================
+// VISTA DE USUARIO (participante)
+// ============================================================
+
+let selectedGameId = null;
+let gameUnsub = null;
+let cardUnsub = null;
+let chatUnsub = null;
+let gamesListUnsub = null;
+let myCardId = null;
+let myCardData = null;
+
+function initUserView() {
+  // Reiniciar estado de paneles
+  document.getElementById("activeGamePanel").classList.add("hidden");
+  document.getElementById("chatPanel").classList.add("hidden");
+  selectedGameId = null;
+  myCardId = null;
+  myCardData = null;
+
+  if (gamesListUnsub) gamesListUnsub();
+  gamesListUnsub = db.collection("games")
+    .where("status", "in", ["open", "running"])
+    .onSnapshot((snap) => {
+      const list = document.getElementById("gamesList");
+      list.innerHTML = "";
+      if (snap.empty) {
+        list.innerHTML = `<p class="empty-state">No hay sorteos activos por el momento. Vuelve pronto 🌱</p>`;
+        return;
+      }
+      snap.forEach((doc) => {
+        const g = doc.data();
+        const div = document.createElement("div");
+        div.className = "plant-item";
+        div.style.cursor = "pointer";
+        div.innerHTML = `
+          <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
+          <div class="plant-body">
+            <h4>${g.plantName}</h4>
+            <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
+          </div>
+        `;
+        div.addEventListener("click", () => selectGame(doc.id));
+        list.appendChild(div);
+      });
+    });
+}
+
+function statusLabel(status) {
+  return { open: "Inscripciones abiertas", running: "¡En juego!", finished: "Finalizado" }[status] || status;
+}
+
+function selectGame(gameId) {
+  selectedGameId = gameId;
+  document.getElementById("activeGamePanel").classList.remove("hidden");
+  document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
+
+  if (gameUnsub) gameUnsub();
+  if (cardUnsub) cardUnsub();
+  if (chatUnsub) chatUnsub();
+
+  gameUnsub = db.collection("games").doc(gameId).onSnapshot((doc) => {
+    if (!doc.exists) return;
+    renderGame(doc.id, doc.data());
+  });
+
+  listenToMyCard(gameId);
+}
+
+function renderGame(gameId, g) {
+  document.getElementById("activePlantTitle").textContent = `🌱 ${g.plantName}`;
+  document.getElementById("activePlantImg").src = g.plantImageUrl || "";
+  document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
+
+  const called = g.calledNumbers || [];
+  const currentNum = called.length ? called[called.length - 1] : "-";
+  document.getElementById("currentNumberBig").textContent =
+    currentNum === "-" ? "-" : `${letterForNumber(currentNum)}-${currentNum}`;
+
+  const historyEl = document.getElementById("calledHistory");
+  historyEl.innerHTML = "";
+  called.slice().reverse().forEach((n) => {
+    const chip = document.createElement("span");
+    chip.className = "called-chip";
+    chip.textContent = `${letterForNumber(n)}-${n}`;
+    historyEl.appendChild(chip);
+  });
+
+  if (myCardId && myCardData) {
+    updateCardMarks(called);
+  }
+
+  const chatPanel = document.getElementById("chatPanel");
+  if (g.status === "finished" && g.winnerUserId === currentUser.uid) {
+    chatPanel.classList.remove("hidden");
+    listenToChat(gameId);
+  } else {
+    chatPanel.classList.add("hidden");
+  }
+}
+
+function listenToMyCard(gameId) {
+  cardUnsub = db.collection("games").doc(gameId).collection("cards")
+    .where("userId", "==", currentUser.uid)
+    .limit(1)
+    .onSnapshot((snap) => {
+      if (snap.empty) {
+        myCardId = null;
+        myCardData = null;
+        document.getElementById("noCardPanel").classList.remove("hidden");
+        document.getElementById("pendingPaymentPanel").classList.add("hidden");
+        document.getElementById("cardPanel").classList.add("hidden");
+        return;
+      }
+      const doc = snap.docs[0];
+      myCardId = doc.id;
+      myCardData = doc.data();
+
+      document.getElementById("noCardPanel").classList.add("hidden");
+
+      if (myCardData.paymentStatus !== "approved") {
+        document.getElementById("pendingPaymentPanel").classList.remove("hidden");
+        document.getElementById("cardPanel").classList.add("hidden");
+        document.getElementById("proofStatus").textContent =
+          myCardData.paymentProofUrl
+            ? "Comprobante recibido. Esperando aprobación del administrador..."
+            : "Aún no has subido tu comprobante.";
+      } else {
+        document.getElementById("pendingPaymentPanel").classList.add("hidden");
+        document.getElementById("cardPanel").classList.remove("hidden");
+        renderBingoCard(myCardData.numbers, myCardData.marked);
+        if (myCardData.completed) {
+          document.getElementById("winMsg").classList.remove("hidden");
+          document.getElementById("winMsg").textContent = "🏆 ¡Completaste tu cartón!";
+        }
+      }
+    });
+}
+
+document.getElementById("requestCardBtn").addEventListener("click", async () => {
+  if (!selectedGameId) return;
+  const { numbers, marked } = generateBingoCard();
+  const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc();
+  await cardRef.set({
+    userId: currentUser.uid,
+    userName: currentUserData.name,
+    userEmail: currentUserData.email,
+    numbers, marked,
+    paymentProofUrl: null,
+    paymentStatus: "pending",
+    completed: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+});
+
+document.getElementById("uploadProofBtn").addEventListener("click", async () => {
+  const urlInput = document.getElementById("proofInput");
+  const url = urlInput.value.trim();
+  if (!url || !myCardId) {
+    document.getElementById("proofStatus").textContent = "Pega el enlace de tu comprobante primero.";
+    return;
+  }
+  document.getElementById("proofStatus").textContent = "Guardando comprobante...";
+  try {
+    await db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId).update({
+      paymentProofUrl: url,
+      paymentStatus: "pending"
+    });
+    document.getElementById("proofStatus").textContent = "Comprobante enviado. Esperando aprobación.";
+  } catch (err) {
+    document.getElementById("proofStatus").textContent = "Error al guardar: " + err.message;
+  }
+});
+
+function renderBingoCard(numbers, marked) {
+  const el = document.getElementById("bingoCard");
+  el.innerHTML = "";
+  BINGO_LETTERS.forEach((l) => {
+    const h = document.createElement("div");
+    h.className = "bingo-header";
+    h.textContent = l;
+    el.appendChild(h);
+  });
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      const val = numbers[row][col];
+      const cell = document.createElement("div");
+      cell.className = "bingo-cell" + (marked[row][col] ? " marked" : "") + (val === "FREE" ? " free" : "");
+      cell.textContent = val;
+      el.appendChild(cell);
+    }
+  }
+}
+
+async function updateCardMarks(calledNumbers) {
+  if (!myCardData || myCardData.paymentStatus !== "approved") return;
+
+  const newMarked = recalculateMarks(myCardData.numbers, calledNumbers);
+  renderBingoCard(myCardData.numbers, newMarked);
+
+  const wasComplete = isCardComplete(myCardData.marked);
+  const nowComplete = isCardComplete(newMarked);
+
+  const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(myCardId);
+  cardRef.update({ marked: newMarked }).catch(() => {});
+
+  if (!wasComplete && nowComplete) {
+    await tryDeclareWinner(cardRef);
+  }
+}
+
+async function tryDeclareWinner(cardRef) {
+  const gameRef = db.collection("games").doc(selectedGameId);
+  try {
+    await db.runTransaction(async (tx) => {
+      const gameDoc = await tx.get(gameRef);
+      const gameData = gameDoc.data();
+      if (gameData.status === "finished" || gameData.winnerUserId) return;
+      tx.update(gameRef, {
+        status: "finished",
+        winnerUserId: currentUser.uid,
+        winnerUserName: currentUserData.name,
+        winnerCardId: cardRef.id,
+        finishedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      tx.update(cardRef, { completed: true, completedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    });
+  } catch (err) {
+    console.error("Error en transacción de ganador:", err);
+  }
+}
+
+function listenToChat(gameId) {
+  chatUnsub = db.collection("games").doc(gameId).collection("chat")
+    .orderBy("createdAt", "asc")
+    .onSnapshot((snap) => {
+      const box = document.getElementById("chatBox");
+      box.innerHTML = "";
+      snap.forEach((doc) => {
+        const m = doc.data();
+        const div = document.createElement("div");
+        div.className = "chat-msg " + (m.senderId === currentUser.uid ? "mine" : "theirs");
+        div.textContent = m.text;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    });
+}
+
+document.getElementById("sendChatBtn").addEventListener("click", sendChatMessage);
+document.getElementById("chatInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendChatMessage();
+});
+
+async function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text || !selectedGameId) return;
+  input.value = "";
+  await db.collection("games").doc(selectedGameId).collection("chat").add({
+    text,
+    senderId: currentUser.uid,
+    senderName: currentUserData.name,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+</script>
+
+<script>
+// ============================================================
+// VISTA DE ADMINISTRADOR
+// ============================================================
+
+let plantsCache = {};
+let selectedAdminGameId = null;
+let adminGameUnsub = null;
+let adminCardsUnsub = null;
+let adminChatUnsub = null;
+let plantsUnsub = null;
+let gamesSelectorUnsub = null;
+
+function initAdminView() {
+  document.getElementById("gameControlPanel").classList.add("hidden");
+  document.getElementById("adminChatPanel").classList.add("hidden");
+  selectedAdminGameId = null;
+  loadPlants();
+  loadGamesSelector();
+}
+
+function loadPlants() {
+  if (plantsUnsub) plantsUnsub();
+  plantsUnsub = db.collection("plants").orderBy("createdAt", "asc").onSnapshot((snap) => {
+    plantsCache = {};
+    const list = document.getElementById("plantsList");
+    const select = document.getElementById("plantSelectForGame");
+    list.innerHTML = "";
+    select.innerHTML = "<option value=''>-- Selecciona una planta --</option>";
+
+    snap.forEach((doc) => {
+      const p = doc.data();
+      plantsCache[doc.id] = p;
+
+      const item = document.createElement("div");
+      item.className = "plant-item";
+      item.innerHTML = `
+        <img src="${p.imageUrl || ''}" alt="${p.name}">
+        <div class="plant-body">
+          <h4>${p.name}</h4>
+          <p>${p.description || ""}</p>
+          <div style="margin-top:8px;display:flex;gap:6px;">
+            <button class="btn small secondary" data-edit="${doc.id}">Editar</button>
+            <button class="btn small red" data-delete="${doc.id}">Eliminar</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(item);
+
+      const opt = document.createElement("option");
+      opt.value = doc.id;
+      opt.textContent = p.name;
+      select.appendChild(opt);
+    });
+
+    list.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => editPlant(btn.dataset.edit));
+    });
+    list.querySelectorAll("[data-delete]").forEach((btn) => {
+      btn.addEventListener("click", () => deletePlant(btn.dataset.delete));
+    });
+  });
+}
+
+function editPlant(id) {
+  const p = plantsCache[id];
+  document.getElementById("plantEditId").value = id;
+  document.getElementById("plantName").value = p.name;
+  document.getElementById("plantDesc").value = p.description || "";
+  document.getElementById("plantImageUrl").value = p.imageUrl || "";
+  document.getElementById("cancelEditBtn").classList.remove("hidden");
+  document.getElementById("plantForm").scrollIntoView({ behavior: "smooth" });
+}
+
+document.getElementById("cancelEditBtn").addEventListener("click", () => {
+  document.getElementById("plantEditId").value = "";
+  document.getElementById("plantName").value = "";
+  document.getElementById("plantDesc").value = "";
+  document.getElementById("plantImageUrl").value = "";
+  document.getElementById("cancelEditBtn").classList.add("hidden");
+});
+
+async function deletePlant(id) {
+  if (!confirm("¿Eliminar esta planta? Esta acción no se puede deshacer.")) return;
+  await db.collection("plants").doc(id).delete();
+}
+
+document.getElementById("savePlantBtn").addEventListener("click", async () => {
+  const id = document.getElementById("plantEditId").value;
+  const name = document.getElementById("plantName").value.trim();
+  const description = document.getElementById("plantDesc").value.trim();
+  const imageUrl = document.getElementById("plantImageUrl").value.trim();
+
+  if (!name) {
+    alert("El nombre de la planta es obligatorio.");
+    return;
+  }
+
+  const btn = document.getElementById("savePlantBtn");
+  btn.disabled = true;
+  btn.textContent = "Guardando...";
+
+  try {
+    const payload = {
+      name, description, imageUrl,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (id) {
+      await db.collection("plants").doc(id).update(payload);
+    } else {
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection("plants").add(payload);
+    }
+
+    document.getElementById("cancelEditBtn").click();
+  } catch (err) {
+    alert("Error al guardar la planta: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Guardar planta";
+  }
+});
+
+function loadGamesSelector() {
+  if (gamesSelectorUnsub) gamesSelectorUnsub();
+  gamesSelectorUnsub = db.collection("games").orderBy("createdAt", "desc").onSnapshot((snap) => {
+    const select = document.getElementById("gameSelector");
+    const prevValue = select.value;
+    select.innerHTML = "<option value=''>-- Selecciona un sorteo --</option>";
+    snap.forEach((doc) => {
+      const g = doc.data();
+      const opt = document.createElement("option");
+      opt.value = doc.id;
+      opt.textContent = `${g.plantName} (${statusLabelAdmin(g.status)})`;
+      select.appendChild(opt);
+    });
+    if (prevValue) select.value = prevValue;
+  });
+}
+
+function statusLabelAdmin(status) {
+  return { open: "Abierto", running: "En curso", finished: "Finalizado" }[status] || status;
+}
+
+document.getElementById("createGameBtn").addEventListener("click", async () => {
+  const plantId = document.getElementById("plantSelectForGame").value;
+  if (!plantId) {
+    alert("Selecciona una planta primero.");
+    return;
+  }
+  const plant = plantsCache[plantId];
+  const gameRef = await db.collection("games").add({
+    plantId,
+    plantName: plant.name,
+    plantDescription: plant.description || "",
+    plantImageUrl: plant.imageUrl || "",
+    status: "open",
+    calledNumbers: [],
+    winnerUserId: null,
+    winnerUserName: null,
+    winnerCardId: null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById("gameSelector").value = gameRef.id;
+  selectAdminGame(gameRef.id);
+});
+
+document.getElementById("gameSelector").addEventListener("change", (e) => {
+  if (e.target.value) selectAdminGame(e.target.value);
+  else {
+    document.getElementById("gameControlPanel").classList.add("hidden");
+    document.getElementById("adminChatPanel").classList.add("hidden");
+  }
+});
+
+function selectAdminGame(gameId) {
+  selectedAdminGameId = gameId;
+  document.getElementById("gameControlPanel").classList.remove("hidden");
+
+  if (adminGameUnsub) adminGameUnsub();
+  if (adminCardsUnsub) adminCardsUnsub();
+  if (adminChatUnsub) adminChatUnsub();
+
+  adminGameUnsub = db.collection("games").doc(gameId).onSnapshot((doc) => {
+    if (!doc.exists) return;
+    renderAdminGame(doc.id, doc.data());
+  });
+
+  adminCardsUnsub = db.collection("games").doc(gameId).collection("cards")
+    .orderBy("createdAt", "asc")
+    .onSnapshot((snap) => renderParticipants(gameId, snap));
+}
+
+function renderAdminGame(gameId, g) {
+  document.getElementById("gameControlTitle").textContent = `Sorteo: ${g.plantName} — ${statusLabelAdmin(g.status)}`;
+
+  const called = g.calledNumbers || [];
+  const currentNum = called.length ? called[called.length - 1] : "-";
+  document.getElementById("adminCurrentNumber").textContent =
+    currentNum === "-" ? "-" : `${letterForNumber(currentNum)}-${currentNum}`;
+
+  const historyEl = document.getElementById("adminCalledHistory");
+  historyEl.innerHTML = "";
+  called.slice().reverse().forEach((n) => {
+    const chip = document.createElement("span");
+    chip.className = "called-chip";
+    chip.textContent = `${letterForNumber(n)}-${n}`;
+    historyEl.appendChild(chip);
+  });
+
+  const banner = document.getElementById("winnerBanner");
+  const callBtn = document.getElementById("callNumberBtn");
+  if (g.status === "finished" && g.winnerUserName) {
+    banner.classList.remove("hidden");
+    banner.innerHTML = `<span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>`;
+    callBtn.disabled = true;
+    document.getElementById("adminChatPanel").classList.remove("hidden");
+    listenAdminChat(gameId);
+  } else {
+    banner.classList.add("hidden");
+    callBtn.disabled = called.length >= 75;
+    document.getElementById("adminChatPanel").classList.add("hidden");
+  }
+}
+
+document.getElementById("callNumberBtn").addEventListener("click", async () => {
+  if (!selectedAdminGameId) return;
+  const gameRef = db.collection("games").doc(selectedAdminGameId);
+
+  await db.runTransaction(async (tx) => {
+    const doc = await tx.get(gameRef);
+    const g = doc.data();
+    if (g.status === "finished") return;
+
+    const called = g.calledNumbers || [];
+    const pool = [];
+    for (let n = 1; n <= 75; n++) {
+      if (!called.includes(n)) pool.push(n);
+    }
+    if (!pool.length) return;
+
+    const next = pool[Math.floor(Math.random() * pool.length)];
+    const newStatus = g.status === "open" ? "running" : g.status;
+
+    tx.update(gameRef, { calledNumbers: [...called, next], status: newStatus });
+  });
+});
+
+document.getElementById("resetGameBtn").addEventListener("click", async () => {
+  if (!selectedAdminGameId) return;
+  if (!confirm("Esto reiniciará los números cantados y el ganador de este sorteo. ¿Continuar?")) return;
+
+  await db.collection("games").doc(selectedAdminGameId).update({
+    calledNumbers: [],
+    status: "open",
+    winnerUserId: null,
+    winnerUserName: null,
+    winnerCardId: null,
+    finishedAt: null
+  });
+
+  const cardsSnap = await db.collection("games").doc(selectedAdminGameId).collection("cards").get();
+  const batch = db.batch();
+  cardsSnap.forEach((doc) => {
+    const data = doc.data();
+    const resetMarked = recalculateMarks(data.numbers, []);
+    batch.update(doc.ref, { marked: resetMarked, completed: false });
+  });
+  await batch.commit();
+});
+
+function renderParticipants(gameId, snap) {
+  const tbody = document.getElementById("participantsTable");
+  tbody.innerHTML = "";
+  if (snap.empty) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Aún no hay participantes inscritos.</td></tr>`;
+    return;
+  }
+  snap.forEach((doc) => {
+    const c = doc.data();
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.userName}${c.completed ? ' <span class="badge-winner">🏆</span>' : ""}</td>
+      <td>${c.userEmail}</td>
+      <td>${paymentStatusLabel(c.paymentStatus)}</td>
+      <td>${c.paymentProofUrl ? `<a href="${c.paymentProofUrl}" target="_blank">Ver comprobante</a>` : "—"}</td>
+      <td>${c.paymentStatus === "approved" ? "Cartón activo" : "Sin activar"}</td>
+      <td>
+        ${c.paymentStatus !== "approved"
+          ? `<button class="btn small" data-approve="${doc.id}">Aprobar</button>
+             <button class="btn small red" data-reject="${doc.id}">Rechazar</button>`
+          : "—"}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll("[data-approve]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      db.collection("games").doc(gameId).collection("cards").doc(btn.dataset.approve)
+        .update({ paymentStatus: "approved" })
+    );
+  });
+  tbody.querySelectorAll("[data-reject]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      db.collection("games").doc(gameId).collection("cards").doc(btn.dataset.reject)
+        .update({ paymentStatus: "rejected" })
+    );
+  });
+}
+
+function paymentStatusLabel(status) {
+  return { pending: "⏳ Pendiente", approved: "✅ Aprobado", rejected: "❌ Rechazado" }[status] || "⏳ Pendiente";
+}
+
+function listenAdminChat(gameId) {
+  adminChatUnsub = db.collection("games").doc(gameId).collection("chat")
+    .orderBy("createdAt", "asc")
+    .onSnapshot((snap) => {
+      const box = document.getElementById("adminChatBox");
+      box.innerHTML = "";
+      snap.forEach((doc) => {
+        const m = doc.data();
+        const div = document.createElement("div");
+        div.className = "chat-msg " + (m.senderId === currentUser.uid ? "mine" : "theirs");
+        div.textContent = m.text;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    });
+}
+
+document.getElementById("adminSendChatBtn").addEventListener("click", sendAdminChatMessage);
+document.getElementById("adminChatInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendAdminChatMessage();
+});
+
+async function sendAdminChatMessage() {
+  const input = document.getElementById("adminChatInput");
+  const text = input.value.trim();
+  if (!text || !selectedAdminGameId) return;
+  input.value = "";
+  await db.collection("games").doc(selectedAdminGameId).collection("chat").add({
+    text,
+    senderId: currentUser.uid,
+    senderName: "Administrador",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+</script>
+
+</body>
+</html>
