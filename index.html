@@ -488,6 +488,21 @@ th { background: var(--green-100); color: var(--green-900); }
   cursor: pointer;
   color: var(--gray-600);
 }
+
+/* ---------- Indicador de números marcados ---------- */
+.marked-count {
+  background: var(--green-500);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 8px;
+}
 </style>
 </head>
 <body>
@@ -949,7 +964,7 @@ function generateBingoCard() {
 
 function recalculateMarks(numbers, calledNumbers) {
   const calledSet = new Set(calledNumbers);
-  const marked = [[], [], [], []];
+  const marked = [[], [], [], [], []];
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 5; col++) {
       const val = numbers[row][col];
@@ -1687,8 +1702,20 @@ function renderMyCards() {
         previewImg.classList.remove("hidden");
       }
     } else {
+      // Contar números marcados
+      let markedCount = 0;
+      if (card.data.marked) {
+        for (let row = 0; row < 5; row++) {
+          for (let col = 0; col < 5; col++) {
+            if (card.data.marked[row][col]) markedCount++;
+          }
+        }
+      }
+      
       panel.innerHTML = `
-        <h4 style="margin-top:0;">Cartón #${idx + 1} ${card.data.completed ? '<span class="badge-winner">🏆 Ganador</span>' : ""}</h4>
+        <h4 style="margin-top:0;">Cartón #${idx + 1} ${card.data.completed ? '<span class="badge-winner">🏆 Ganador</span>' : ""}
+          <span class="marked-count">${markedCount}/25</span>
+        </h4>
         <div class="bingo-card" data-bingo-card="${card.id}"></div>
         <p class="empty-state hidden" data-win-msg="${card.id}"></p>
       `;
@@ -1840,6 +1867,9 @@ async function updateAllCardMarks(calledNumbers) {
       await tryDeclareWinner(cardRef);
     }
   }
+  
+  // Actualizar contadores de números marcados
+  renderMyCards();
 }
 
 async function tryDeclareWinner(cardRef) {
@@ -1962,11 +1992,29 @@ function renderSocialWall(posts) {
           <div class="post-name">${post.userName}</div>
           <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
         </div>
+        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
+          `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
       <div class="post-content">${post.content}</div>
       ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
     `;
     wall.appendChild(postEl);
+    
+    // Agregar evento para eliminar posts
+    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
+      const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", async () => {
+          if (confirm("¿Eliminar esta publicación?")) {
+            try {
+              await db.collection("posts").doc(post.id).delete();
+            } catch (err) {
+              alert("Error al eliminar la publicación: " + err.message);
+            }
+          }
+        });
+      }
+    }
   });
 }
 
@@ -2667,10 +2715,10 @@ document.getElementById("callNumberBtn").addEventListener("click", async () => {
     return;
   }
   
-  // Iniciar el canto automático cada 20 segundos
+  // Iniciar el canto automático cada 7 segundos
   autoCallInterval = setInterval(async () => {
     await callNextNumber();
-  }, 20000);
+  }, 7000);
   
   document.getElementById("callNumberBtn").textContent = "⏹ Detener canto automático";
   
@@ -2935,25 +2983,29 @@ function renderAdminSocialWall(posts) {
           <div class="post-name">${post.userName}</div>
           <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
         </div>
+        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
+          `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
       <div class="post-content">${post.content}</div>
       ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
-      <button class="btn small red" data-delete-post="${post.id}" style="margin-top: 10px;">Eliminar</button>
     `;
     wall.appendChild(postEl);
-  });
-  
-  // Agregar eventos para eliminar posts
-  wall.querySelectorAll("[data-delete-post]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      if (confirm("¿Eliminar esta publicación?")) {
-        try {
-          await db.collection("posts").doc(btn.dataset.deletePost).delete();
-        } catch (err) {
-          alert("Error al eliminar la publicación: " + err.message);
-        }
+    
+    // Agregar evento para eliminar posts
+    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
+      const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", async () => {
+          if (confirm("¿Eliminar esta publicación?")) {
+            try {
+              await db.collection("posts").doc(post.id).delete();
+            } catch (err) {
+              alert("Error al eliminar la publicación: " + err.message);
+            }
+          }
+        });
       }
-    });
+    }
   });
 }
 
