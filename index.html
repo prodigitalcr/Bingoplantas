@@ -1966,9 +1966,31 @@ function listenSocialWall() {
     .orderBy("createdAt", "desc")
     .onSnapshot((snap) => {
       const posts = [];
+      const userPosts = new Map(); // Para almacenar solo la última publicación de cada usuario
+      
       snap.forEach((doc) => {
-        posts.push({ id: doc.id, ...doc.data() });
+        const postData = { id: doc.id, ...doc.data() };
+        // Solo guardar la más reciente de cada usuario
+        if (!userPosts.has(postData.userId)) {
+          userPosts.set(postData.userId, postData);
+        }
       });
+      
+      // Convertir el Map a array y filtrar solo el usuario actual y administrador
+      userPosts.forEach((post) => {
+        // Mostrar siempre la publicación del usuario actual
+        if (post.userId === currentUser.uid) {
+          posts.push(post);
+        }
+        // Mostrar publicaciones del administrador
+        else if (post.userName === "Administrador") {
+          posts.push(post);
+        }
+      });
+      
+      // Ordenar por fecha (más recientes primero)
+      posts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      
       renderSocialWall(posts);
     });
 }
@@ -1992,7 +2014,7 @@ function renderSocialWall(posts) {
           <div class="post-name">${post.userName}</div>
           <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
         </div>
-        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
+        ${post.userId === currentUser.uid ? 
           `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
       <div class="post-content">${post.content}</div>
@@ -2000,8 +2022,8 @@ function renderSocialWall(posts) {
     `;
     wall.appendChild(postEl);
     
-    // Agregar evento para eliminar posts
-    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
+    // Agregar evento para eliminar posts (solo el usuario dueño)
+    if (post.userId === currentUser.uid) {
       const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
       if (deleteBtn) {
         deleteBtn.addEventListener("click", async () => {
@@ -2957,9 +2979,31 @@ function listenAdminSocialWall() {
     .orderBy("createdAt", "desc")
     .onSnapshot((snap) => {
       const posts = [];
+      const userPosts = new Map(); // Para almacenar solo la última publicación de cada usuario
+      
       snap.forEach((doc) => {
-        posts.push({ id: doc.id, ...doc.data() });
+        const postData = { id: doc.id, ...doc.data() };
+        // Solo guardar la más reciente de cada usuario
+        if (!userPosts.has(postData.userId)) {
+          userPosts.set(postData.userId, postData);
+        }
       });
+      
+      // Convertir el Map a array y filtrar solo el administrador y usuario actual
+      userPosts.forEach((post) => {
+        // Mostrar siempre la publicación del administrador
+        if (post.userName === "Administrador" || post.userId === currentUser.uid) {
+          posts.push(post);
+        }
+        // Mostrar publicación del usuario actual si es diferente al admin
+        else if (post.userId === currentUser.uid) {
+          posts.push(post);
+        }
+      });
+      
+      // Ordenar por fecha (más recientes primero)
+      posts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      
       renderAdminSocialWall(posts);
     });
 }
