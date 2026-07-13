@@ -334,6 +334,76 @@ th { background: var(--green-100); color: var(--green-900); }
   padding: 10px 4px; border-bottom: 1px solid var(--gray-300); gap: 10px;
 }
 .notif-item:last-child { border-bottom: none; }
+
+/* ---------- Videos flotantes (miniaturas que llevan a la tienda) ---------- */
+.floating-promos {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 900;
+}
+.floating-promo {
+  position: relative;
+  display: block;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 3px solid white;
+  background: #000;
+  cursor: pointer;
+}
+.floating-promo .promo-media { width: 100%; height: 100%; }
+.floating-promo .promo-media video,
+.floating-promo .promo-media iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  pointer-events: none;
+}
+.floating-promo .promo-badge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.55);
+  color: white;
+  font-size: 0.65rem;
+  text-align: center;
+  padding: 3px 0;
+}
+.floating-promo .promo-close {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red-500);
+  color: white;
+  border: 2px solid white;
+  font-size: 0.75rem;
+  line-height: 18px;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .floating-promo { width: 84px; height: 84px; }
+}
+
+/* ---------- Imagen del premio dentro del chat ---------- */
+.chat-prize-img {
+  display: block;
+  max-width: 220px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
 </style>
 </head>
 <body>
@@ -386,9 +456,17 @@ th { background: var(--green-100); color: var(--green-900); }
 
   <div class="container">
 
-    <div class="card-panel hidden" id="adBannerPanel" style="background:var(--green-100);text-align:center;">
-      <p id="adBannerText" style="margin:0 0 10px 0;font-weight:600;"></p>
-      <a class="btn" id="adBannerLink" style="width:auto;display:inline-block;text-decoration:none;padding:10px 24px;" target="_blank" rel="noopener">Ver enlace</a>
+    <div id="floatingPromos" class="floating-promos">
+      <a class="floating-promo hidden" id="promo1Bubble" target="_blank" rel="noopener">
+        <div class="promo-media" id="promo1Media"></div>
+        <span class="promo-badge">🛍️ Tienda</span>
+        <span class="promo-close" data-close-promo="1">✕</span>
+      </a>
+      <a class="floating-promo hidden" id="promo2Bubble" target="_blank" rel="noopener">
+        <div class="promo-media" id="promo2Media"></div>
+        <span class="promo-badge">🛍️ Tienda</span>
+        <span class="promo-close" data-close-promo="2">✕</span>
+      </a>
     </div>
 
     <div class="card-panel" id="userNotificationsPanel">
@@ -432,11 +510,21 @@ th { background: var(--green-100); color: var(--green-900); }
 
     <div class="card-panel hidden" id="chatPanel">
       <h3>💬 Chat con el administrador — ¡Ganaste este premio!</h3>
+      <img id="chatPrizeImg" class="chat-prize-img hidden" alt="Premio ganado">
       <div class="chat-box" id="chatBox"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
         <button class="btn small" id="sendChatBtn">Enviar</button>
       </div>
+    </div>
+
+    <div class="card-panel" id="userPasswordPanel">
+      <h3>🔒 Cambiar contraseña</h3>
+      <input type="password" id="userCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
+      <input type="password" id="userNewPassword" placeholder="Contraseña nueva (mín. 6 caracteres)" autocomplete="new-password" minlength="6">
+      <input type="password" id="userConfirmPassword" placeholder="Confirmar contraseña nueva" autocomplete="new-password" minlength="6">
+      <button class="btn small" id="userChangePasswordBtn" style="width:auto;">Actualizar contraseña</button>
+      <p id="userPasswordStatus" style="font-size:0.8rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
     </div>
 
   </div>
@@ -462,14 +550,27 @@ th { background: var(--green-100); color: var(--green-900); }
     </div>
 
     <div class="card-panel" id="adPanel">
-      <h2>📢 Publicidad para jugadores</h2>
-      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0;">Este mensaje y enlace se muestran arriba de todo a cada jugador que inicie sesión. Déjalo vacío para no mostrar nada.</p>
-      <input type="text" id="adText" placeholder="Texto del anuncio (ej: ¡Síguenos en Facebook!)">
-      <input type="url" id="adUrl" placeholder="Enlace (https://...)">
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn small" id="saveAdBtn" style="width:auto;">Guardar publicidad</button>
-        <button class="btn small red" id="removeAdBtn" style="width:auto;">Quitar publicidad</button>
+      <h2>📢 Videos flotantes para jugadores</h2>
+      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0;">
+        Cada video aparece como una miniatura flotante sobre la pantalla de los jugadores. Al tocarla, se abre el enlace de la tienda en una pestaña nueva. Funciona mejor con enlaces de YouTube o un archivo de video directo (.mp4). Enlaces de TikTok/Instagram/Facebook no se pueden mostrar en miniatura por restricciones de esas plataformas — usa YouTube o sube el video como .mp4 a un enlace directo.
+      </p>
+
+      <div class="grid-2">
+        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
+          <h3 style="margin-top:0;">Video 1</h3>
+          <input type="url" id="promo1VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
+          <input type="url" id="promo1StoreUrl" placeholder="Enlace de la tienda">
+          <button class="btn small red" id="removePromo1Btn" style="width:auto;">Quitar video 1</button>
+        </div>
+        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
+          <h3 style="margin-top:0;">Video 2</h3>
+          <input type="url" id="promo2VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
+          <input type="url" id="promo2StoreUrl" placeholder="Enlace de la tienda">
+          <button class="btn small red" id="removePromo2Btn" style="width:auto;">Quitar video 2</button>
+        </div>
       </div>
+
+      <button class="btn small" id="saveAdBtn" style="width:auto;">Guardar videos</button>
       <p id="adStatus" style="font-size:0.8rem;color:var(--gray-600);margin:6px 0 0 0;"></p>
     </div>
 
@@ -532,6 +633,12 @@ th { background: var(--green-100); color: var(--green-900); }
       </div>
     </div>
 
+    <div class="card-panel" id="winnersHistoryPanel">
+      <h2>🏆 Historial de ganadores</h2>
+      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0;">Contacta al ganador de cualquier sorteo finalizado directamente por WhatsApp.</p>
+      <div id="winnersHistoryList"><p class="empty-state">Aún no hay sorteos finalizados con ganador.</p></div>
+    </div>
+
     <div class="card-panel hidden" id="gameControlPanel">
       <h2 id="gameControlTitle">Sorteo</h2>
 
@@ -582,11 +689,22 @@ th { background: var(--green-100); color: var(--green-900); }
 
     <div class="card-panel hidden" id="adminChatPanel">
       <h3>💬 Chat con el ganador</h3>
+      <img id="adminChatPrizeImg" class="chat-prize-img hidden" alt="Premio ganado">
+      <button class="btn small amber" id="sendCongratsBtn" style="width:auto;margin-bottom:10px;">🎉 Preparar mensaje de felicitación</button>
       <div class="chat-box" id="adminChatBox"></div>
       <div class="chat-input-row">
         <input type="text" id="adminChatInput" placeholder="Escribe un mensaje...">
         <button class="btn small" id="adminSendChatBtn">Enviar</button>
       </div>
+    </div>
+
+    <div class="card-panel" id="adminPasswordPanel">
+      <h3>🔒 Cambiar contraseña</h3>
+      <input type="password" id="adminCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
+      <input type="password" id="adminNewPassword" placeholder="Contraseña nueva (mín. 6 caracteres)" autocomplete="new-password" minlength="6">
+      <input type="password" id="adminConfirmPassword" placeholder="Confirmar contraseña nueva" autocomplete="new-password" minlength="6">
+      <button class="btn small" id="adminChangePasswordBtn" style="width:auto;">Actualizar contraseña</button>
+      <p id="adminPasswordStatus" style="font-size:0.8rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
     </div>
 
   </div>
@@ -926,6 +1044,7 @@ function cleanupAllListeners() {
   if (typeof notificationsUnsub === "function") notificationsUnsub();
   if (typeof adBannerUnsub === "function") adBannerUnsub();
   if (typeof adAdminUnsub === "function") adAdminUnsub();
+  if (typeof winnersHistoryUnsub === "function") winnersHistoryUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -1040,7 +1159,7 @@ function initUserView() {
 
   if (gamesListUnsub) gamesListUnsub();
   listenUserNotifications();
-  listenAdBanner();
+  listenFloatingPromos();
   gamesListUnsub = db.collection("games")
     .where("status", "in", ["open", "running"])
     .onSnapshot((snap) => {
@@ -1136,23 +1255,65 @@ function renderUserNotifications(list) {
   });
 }
 
-// ---------- Publicidad: enlace que el administrador comparte con los jugadores ----------
-function listenAdBanner() {
+// ---------- Videos flotantes: miniaturas de video que llevan a la tienda del administrador ----------
+const dismissedPromosThisSession = {};
+
+function listenFloatingPromos() {
   if (adBannerUnsub) adBannerUnsub();
-  adBannerUnsub = db.collection("settings").doc("ad").onSnapshot((doc) => {
-    const panel = document.getElementById("adBannerPanel");
-    const data = doc.exists ? doc.data() : null;
-    if (!data || !data.url) {
-      panel.classList.add("hidden");
-      return;
-    }
-    document.getElementById("adBannerText").textContent = data.text || "";
-    const link = document.getElementById("adBannerLink");
-    link.href = data.url;
-    link.textContent = data.text ? "Ver enlace" : "🔗 " + data.url;
-    panel.classList.remove("hidden");
+  adBannerUnsub = db.collection("settings").doc("promos").onSnapshot((doc) => {
+    const data = doc.exists ? doc.data() : {};
+    renderFloatingPromo("1", data.promo1);
+    renderFloatingPromo("2", data.promo2);
   });
 }
+
+function renderFloatingPromo(slot, promo) {
+  const bubble = document.getElementById(`promo${slot}Bubble`);
+  const mediaBox = document.getElementById(`promo${slot}Media`);
+
+  if (!promo || !promo.videoUrl || !promo.storeUrl || dismissedPromosThisSession[slot]) {
+    bubble.classList.add("hidden");
+    mediaBox.innerHTML = "";
+    return;
+  }
+
+  bubble.href = promo.storeUrl;
+  mediaBox.innerHTML = buildPromoMediaHtml(promo.videoUrl);
+  bubble.classList.remove("hidden");
+}
+
+// Construye el reproductor embebido según el tipo de enlace de video.
+function buildPromoMediaHtml(url) {
+  const ytId = extractYouTubeId(url);
+  if (ytId) {
+    return `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  }
+  // Si no es YouTube, se asume un archivo de video directo (.mp4, .webm, etc).
+  return `<video src="${url}" autoplay muted loop playsinline></video>`;
+}
+
+function extractYouTubeId(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1) || null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.searchParams.get("v")) return u.searchParams.get("v");
+      const m = u.pathname.match(/\/(embed|shorts)\/([^/?]+)/);
+      if (m) return m[2];
+    }
+  } catch (err) { /* url inválida */ }
+  return null;
+}
+
+document.querySelectorAll("[data-close-promo]").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const slot = btn.dataset.closePromo;
+    dismissedPromosThisSession[slot] = true;
+    document.getElementById(`promo${slot}Bubble`).classList.add("hidden");
+  });
+});
 
 function selectGame(gameId) {
   selectedGameId = gameId;
@@ -1231,6 +1392,13 @@ function renderGame(gameId, g) {
   const chatPanel = document.getElementById("chatPanel");
   if (g.status === "finished" && g.winnerUserId === currentUser.uid) {
     chatPanel.classList.remove("hidden");
+    const prizeImg = document.getElementById("chatPrizeImg");
+    if (g.plantImageUrl) {
+      prizeImg.src = g.plantImageUrl;
+      prizeImg.classList.remove("hidden");
+    } else {
+      prizeImg.classList.add("hidden");
+    }
     listenToChat(gameId);
   } else {
     chatPanel.classList.add("hidden");
@@ -1553,6 +1721,48 @@ async function sendChatMessage() {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
+
+// ---------- Cambiar contraseña (reutilizable para usuario y administrador) ----------
+// Firebase exige reautenticación reciente para operaciones sensibles, así que
+// primero se confirma la contraseña actual antes de establecer la nueva.
+function wireChangePassword(prefix) {
+  const btn = document.getElementById(`${prefix}ChangePasswordBtn`);
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    const statusEl = document.getElementById(`${prefix}PasswordStatus`);
+    const currentPassword = document.getElementById(`${prefix}CurrentPassword`).value;
+    const newPassword = document.getElementById(`${prefix}NewPassword`).value;
+    const confirmPassword = document.getElementById(`${prefix}ConfirmPassword`).value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      statusEl.textContent = "Completa los tres campos.";
+      return;
+    }
+    if (newPassword.length < 6) {
+      statusEl.textContent = "La contraseña nueva debe tener al menos 6 caracteres.";
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      statusEl.textContent = "La confirmación no coincide con la contraseña nueva.";
+      return;
+    }
+
+    statusEl.textContent = "Actualizando...";
+    try {
+      const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await currentUser.reauthenticateWithCredential(cred);
+      await currentUser.updatePassword(newPassword);
+      statusEl.textContent = "✅ Contraseña actualizada correctamente.";
+      document.getElementById(`${prefix}CurrentPassword`).value = "";
+      document.getElementById(`${prefix}NewPassword`).value = "";
+      document.getElementById(`${prefix}ConfirmPassword`).value = "";
+    } catch (err) {
+      statusEl.textContent = traducirError(err.code);
+    }
+  });
+}
+
+wireChangePassword("user");
 </script>
 
 <script>
@@ -1596,58 +1806,132 @@ function initAdminView() {
   loadGamesSelector();
   listenNotifications();
   listenAdSettings();
+  listenWinnersHistory();
 }
 
-// ---------- Publicidad: el admin guarda el enlace que verán los jugadores ----------
+// ---------- Videos flotantes: el admin guarda los 2 videos y sus enlaces de tienda ----------
 function listenAdSettings() {
   if (adAdminUnsub) adAdminUnsub();
-  adAdminUnsub = db.collection("settings").doc("ad").onSnapshot((doc) => {
+  adAdminUnsub = db.collection("settings").doc("promos").onSnapshot((doc) => {
     const data = doc.exists ? doc.data() : {};
-    document.getElementById("adText").value = data.text || "";
-    document.getElementById("adUrl").value = data.url || "";
+    const p1 = data.promo1 || {};
+    const p2 = data.promo2 || {};
+    document.getElementById("promo1VideoUrl").value = p1.videoUrl || "";
+    document.getElementById("promo1StoreUrl").value = p1.storeUrl || "";
+    document.getElementById("promo2VideoUrl").value = p2.videoUrl || "";
+    document.getElementById("promo2StoreUrl").value = p2.storeUrl || "";
   });
+}
+
+function isValidUrlOrEmpty(value) {
+  if (!value) return true;
+  try { new URL(value); return true; } catch { return false; }
 }
 
 document.getElementById("saveAdBtn").addEventListener("click", async () => {
   const statusEl = document.getElementById("adStatus");
-  const text = document.getElementById("adText").value.trim();
-  const url = document.getElementById("adUrl").value.trim();
+  const promo1 = {
+    videoUrl: document.getElementById("promo1VideoUrl").value.trim(),
+    storeUrl: document.getElementById("promo1StoreUrl").value.trim()
+  };
+  const promo2 = {
+    videoUrl: document.getElementById("promo2VideoUrl").value.trim(),
+    storeUrl: document.getElementById("promo2StoreUrl").value.trim()
+  };
 
-  if (!url) {
-    statusEl.textContent = "Escribe un enlace (debe empezar con https://) antes de guardar.";
-    return;
-  }
-  try {
-    new URL(url);
-  } catch {
-    statusEl.textContent = "Ese enlace no parece válido. Revísalo e intenta de nuevo.";
-    return;
+  for (const p of [promo1, promo2]) {
+    if (!isValidUrlOrEmpty(p.videoUrl) || !isValidUrlOrEmpty(p.storeUrl)) {
+      statusEl.textContent = "Uno de los enlaces no parece válido. Revísalos e intenta de nuevo.";
+      return;
+    }
+    if ((p.videoUrl && !p.storeUrl) || (!p.videoUrl && p.storeUrl)) {
+      statusEl.textContent = "Cada video necesita también su enlace de tienda (y viceversa).";
+      return;
+    }
   }
 
   statusEl.textContent = "Guardando...";
   try {
-    await db.collection("settings").doc("ad").set({
-      text, url,
+    await db.collection("settings").doc("promos").set({
+      promo1, promo2,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    statusEl.textContent = "✅ Publicidad guardada. Ya la ven todos los jugadores.";
+    statusEl.textContent = "✅ Videos guardados. Ya los ven todos los jugadores.";
   } catch (err) {
     statusEl.textContent = "Error al guardar: " + err.message;
   }
 });
 
-document.getElementById("removeAdBtn").addEventListener("click", async () => {
-  const statusEl = document.getElementById("adStatus");
-  if (!confirm("¿Quitar la publicidad? Los jugadores dejarán de verla.")) return;
+document.getElementById("removePromo1Btn").addEventListener("click", async () => {
+  document.getElementById("promo1VideoUrl").value = "";
+  document.getElementById("promo1StoreUrl").value = "";
   try {
-    await db.collection("settings").doc("ad").delete();
-    document.getElementById("adText").value = "";
-    document.getElementById("adUrl").value = "";
-    statusEl.textContent = "Publicidad eliminada.";
+    await db.collection("settings").doc("promos").set({
+      promo1: { videoUrl: "", storeUrl: "" }
+    }, { merge: true });
   } catch (err) {
-    statusEl.textContent = "Error al quitar: " + err.message;
+    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
   }
 });
+document.getElementById("removePromo2Btn").addEventListener("click", async () => {
+  document.getElementById("promo2VideoUrl").value = "";
+  document.getElementById("promo2StoreUrl").value = "";
+  try {
+    await db.collection("settings").doc("promos").set({
+      promo2: { videoUrl: "", storeUrl: "" }
+    }, { merge: true });
+  } catch (err) {
+    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
+  }
+});
+
+// ---------- Historial de ganadores: botón de WhatsApp por cada sorteo finalizado ----------
+let winnersHistoryUnsub = null;
+
+function listenWinnersHistory() {
+  if (winnersHistoryUnsub) winnersHistoryUnsub();
+  winnersHistoryUnsub = db.collection("games")
+    .where("status", "==", "finished")
+    .onSnapshot((snap) => {
+      const list = [];
+      snap.forEach((doc) => {
+        const g = doc.data();
+        if (g.winnerUserName) list.push({ id: doc.id, ...g });
+      });
+      // Orden por fecha de finalización más reciente (sin necesitar índice compuesto).
+      list.sort((a, b) => (b.finishedAt?.seconds || 0) - (a.finishedAt?.seconds || 0));
+      renderWinnersHistory(list);
+    });
+}
+
+function renderWinnersHistory(list) {
+  const box = document.getElementById("winnersHistoryList");
+  if (!list.length) {
+    box.innerHTML = `<p class="empty-state">Aún no hay sorteos finalizados con ganador.</p>`;
+    return;
+  }
+  box.innerHTML = "";
+  list.forEach((g) => {
+    const waLink = whatsappLink(
+      g.winnerUserPhone,
+      `¡Hola ${g.winnerUserName}! 🎉 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu premio 🎁`
+    );
+    const row = document.createElement("div");
+    row.className = "notif-item";
+    row.innerHTML = `
+      <div>
+        <strong>${prizeIcon(g.prizeType)} ${g.plantName}</strong>
+        <div style="font-size:0.8rem;color:var(--gray-600);">Ganador: ${g.winnerUserName} — Patrón: ${patternLabel(g.winPattern)}</div>
+      </div>
+      ${waLink
+        ? `<a class="btn small" style="width:auto;background:#25D366;text-decoration:none;" target="_blank" rel="noopener" href="${waLink}">📲 WhatsApp</a>`
+        : `<span style="font-size:0.75rem;color:var(--gray-600);">Sin WhatsApp registrado</span>`}
+    `;
+    box.appendChild(row);
+  });
+}
+
+wireChangePassword("admin");
 
 function listenNotifications() {
   if (notificationsUnsub) notificationsUnsub();
@@ -2000,6 +2284,16 @@ function renderAdminGame(gameId, g) {
     document.getElementById("adminChatPanel").classList.remove("hidden");
     listenAdminChat(gameId);
 
+    // Imagen del premio ganado y datos para el mensaje de felicitación rápido.
+    const prizeImg = document.getElementById("adminChatPrizeImg");
+    if (g.plantImageUrl) {
+      prizeImg.src = g.plantImageUrl;
+      prizeImg.classList.remove("hidden");
+    } else {
+      prizeImg.classList.add("hidden");
+    }
+    adminChatContext = { plantName: g.plantName, winnerUserName: g.winnerUserName };
+
     // Alerta instantánea al administrador la primera vez que se detecta un ganador
     if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
       lastAlertedWinnerId = g.winnerUserId;
@@ -2196,6 +2490,19 @@ async function sendAdminChatMessage() {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
+
+// ---------- Mensaje de felicitación configurado ----------
+// Guarda los datos del ganador actual para armar el mensaje, y deja el texto
+// listo en el cuadro de chat para que el admin lo revise antes de enviarlo.
+let adminChatContext = null;
+
+document.getElementById("sendCongratsBtn").addEventListener("click", () => {
+  if (!adminChatContext) return;
+  const { plantName, winnerUserName } = adminChatContext;
+  document.getElementById("adminChatInput").value =
+    `¡Felicidades ${winnerUserName}! 🎉🌱 Ganaste el sorteo de "${plantName}". Por aquí coordinamos la entrega de tu premio, ¡gracias por participar!`;
+  document.getElementById("adminChatInput").focus();
+});
 </script>
 
 <div class="lightbox-overlay hidden" id="lightboxOverlay">
