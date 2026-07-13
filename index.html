@@ -174,17 +174,7 @@ button { cursor: pointer; font-family: inherit; }
   background: white;
   transition: all 0.2s;
 }
-.bingo-cell.marked { background: var(--green-500); color: white; border-color: var(--green-700); }
 .bingo-cell.free { background: var(--amber-500); color: white; font-size: 0.75rem; }
-.bingo-cell.current-call {
-  border-color: var(--amber-500);
-  box-shadow: 0 0 0 3px rgba(217,155,63,0.55);
-  animation: currentCallPulse 1.4s ease-in-out infinite;
-}
-@keyframes currentCallPulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(217,155,63,0.55); }
-  50%      { box-shadow: 0 0 0 7px rgba(217,155,63,0.9); }
-}
 
 /* ---------- Called number display ---------- */
 .current-number-display { text-align: center; padding: 20px; }
@@ -255,7 +245,6 @@ th { background: var(--green-100); color: var(--green-900); }
   border: 2px solid var(--gray-300); cursor: pointer; transition: border-color 0.2s, transform 0.2s;
 }
 .gallery-thumb:hover { border-color: var(--green-500); transform: scale(1.05); }
-.gallery-thumb.active { border-color: var(--green-600); box-shadow: 0 0 0 2px var(--green-500); }
 .plant-item .mini-thumbs { display: flex; gap: 4px; padding: 0 10px 10px; }
 .plant-item .mini-thumbs img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 1px solid var(--gray-300); }
 
@@ -334,6 +323,198 @@ th { background: var(--green-100); color: var(--green-900); }
   padding: 10px 4px; border-bottom: 1px solid var(--gray-300); gap: 10px;
 }
 .notif-item:last-child { border-bottom: none; }
+
+/* ---------- Marcado automático del número cantado (ayuda al jugador) ---------- */
+@keyframes justCalledPulse {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(217,155,63,0.7); }
+  30%  { transform: scale(1.18); box-shadow: 0 0 0 8px rgba(217,155,63,0.35); }
+  100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(217,155,63,0); }
+}
+.bingo-cell.just-called {
+  animation: justCalledPulse 1.6s ease-out 2;
+  background: var(--amber-500) !important;
+  border-color: var(--amber-500) !important;
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+.bingo-cell.marked {
+  background: var(--green-500);
+  color: white;
+  border-color: var(--green-700);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35);
+}
+.bingo-cell { position: relative; overflow: visible; }
+
+/* ---------- Etiqueta de tipo de premio ---------- */
+.prize-type-badge {
+  display: inline-block;
+  background: var(--green-100);
+  color: var(--green-900);
+  border: 1px solid var(--green-300);
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+/* ============================================================
+   MODO NETFLIX: escenario cinematográfico del sorteo en vivo
+   ============================================================ */
+.netflix-stage {
+  background: linear-gradient(180deg, #0b0f0c 0%, #12201a 55%, #0b0f0c 100%);
+  border-radius: 14px;
+  padding: 22px;
+  color: #f2f5f1;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+  position: relative;
+  overflow: hidden;
+}
+.netflix-stage::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(217,155,63,0.18), transparent 60%);
+  pointer-events: none;
+}
+.netflix-stage h2 { color: #fff; }
+.netflix-stage .pattern-tag { background: var(--amber-500); }
+.netflix-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--red-500);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.netflix-live-tag .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #fff;
+  animation: liveBlink 1.2s infinite;
+}
+@keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.netflix-poster-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.netflix-poster-wrap img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  background: #000;
+  display: block;
+  margin: 0 auto;
+}
+.netflix-poster-wrap .netflix-gradient {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 60%;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85));
+  pointer-events: none;
+}
+.netflix-poster-wrap .netflix-title-overlay {
+  position: absolute; left: 14px; right: 14px; bottom: 10px;
+  font-weight: 800; font-size: 1.05rem; color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+.netflix-stage .gallery-thumb { border-color: rgba(255,255,255,0.25); }
+.netflix-stage .gallery-thumb:hover { border-color: var(--amber-500); }
+.netflix-stage p#activePlantDesc { color: #c7d0c9 !important; }
+
+.netflix-number-display { text-align: center; padding: 10px 0; }
+.netflix-number-display p { color: #c7d0c9; margin: 0 0 10px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
+@keyframes numberDrop {
+  0%   { transform: scale(0.4) translateY(-30px); opacity: 0; }
+  60%  { transform: scale(1.12) translateY(0); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.netflix-number-display .big-number {
+  font-size: 4.5rem;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(135deg, var(--amber-500), #b9772c);
+  display: inline-block;
+  padding: 14px 40px;
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(217,155,63,0.4);
+  animation: numberDrop 0.5s cubic-bezier(.2,1.4,.4,1);
+}
+.netflix-number-display .called-history { justify-content: center; }
+.netflix-number-display .called-chip {
+  background: rgba(255,255,255,0.1);
+  color: #f2f5f1;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ---------- Ventanas flotantes (siempre visibles para el jugador) ---------- */
+.floating-widget {
+  position: fixed;
+  z-index: 500;
+  width: 230px;
+  background: #12201a;
+  color: #f2f5f1;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.82rem;
+}
+.floating-widget .fw-head {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.06);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.floating-widget .fw-head button {
+  background: none; border: none; color: #f2f5f1; opacity: 0.7;
+  font-size: 0.9rem; padding: 0 2px; width: auto;
+}
+.floating-widget .fw-head button:hover { opacity: 1; }
+.floating-widget .fw-body { padding: 10px; }
+.floating-widget.minimized .fw-body { display: none; }
+
+#floatingPlayerWidget { right: 16px; bottom: 16px; }
+#floatingPlayerWidget .fw-number {
+  font-size: 2rem; font-weight: 900; text-align: center;
+  color: var(--amber-500); margin: 2px 0 6px 0;
+}
+#floatingPlayerWidget .fw-progress-bar {
+  height: 6px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; margin-top: 6px;
+}
+#floatingPlayerWidget .fw-progress-fill {
+  height: 100%; background: var(--green-500); transition: width 0.4s ease;
+}
+#floatingPlayerWidget .fw-prize { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+#floatingPlayerWidget .fw-prize img { width: 34px; height: 34px; object-fit: cover; border-radius: 6px; }
+
+#floatingAdWidget { left: 16px; bottom: 16px; width: 260px; padding: 0; }
+#floatingAdWidget .fw-body { padding: 0; }
+#floatingAdWidget video, #floatingAdWidget iframe {
+  width: 100%; height: 146px; display: block; border: none; background: #000;
+}
+#floatingAdWidget .fw-ad-label {
+  font-size: 0.65rem; text-align: center; color: #9aa39c; padding: 4px 0 6px 0; letter-spacing: 0.06em;
+}
+
+@media (max-width: 700px) {
+  .floating-widget { width: 44vw; min-width: 165px; }
+  #floatingPlayerWidget { right: 8px; bottom: 8px; }
+  #floatingAdWidget { left: 8px; bottom: 8px; }
+  #floatingAdWidget video, #floatingAdWidget iframe { height: 100px; }
+}
 </style>
 </head>
 <body>
@@ -398,17 +579,21 @@ th { background: var(--green-100); color: var(--green-900); }
 
     <div id="activeGamePanel" class="hidden">
 
-      <div class="card-panel">
-        <h2 id="activePlantTitle">🌱 Planta en juego</h2>
+      <div class="card-panel netflix-stage">
+        <h2 id="activePlantTitle">🌱 Premio en juego <span class="netflix-live-tag hidden" id="liveTag"><span class="dot"></span>En vivo</span></h2>
         <span class="pattern-tag" id="gameWinPatternLabel">Cartón lleno</span>
         <div class="grid-2">
           <div>
-            <img id="activePlantImg" src="" alt="premio" style="width:100%;border-radius:10px;max-height:340px;object-fit:contain;background:var(--gray-100);display:block;">
+            <div class="netflix-poster-wrap">
+              <img id="activePlantImg" src="" alt="premio">
+              <div class="netflix-gradient"></div>
+              <div class="netflix-title-overlay" id="activePlantTitleOverlay"></div>
+            </div>
             <div class="gallery-thumbs" id="activePlantThumbs"></div>
             <p id="activePlantDesc" style="color:var(--gray-600);"></p>
           </div>
-          <div class="current-number-display">
-            <p style="margin:0 0 8px 0;color:var(--gray-600);">Número cayendo:</p>
+          <div class="netflix-number-display">
+            <p>Número cayendo:</p>
             <div class="big-number" id="currentNumberBig">-</div>
             <div class="called-history" id="calledHistory"></div>
           </div>
@@ -426,7 +611,7 @@ th { background: var(--green-100); color: var(--green-900); }
     </div>
 
     <div class="card-panel hidden" id="chatPanel">
-      <h3>💬 Chat con el administrador — ¡Ganaste este premio!</h3>
+      <h3>💬 Chat con el administrador — ¡Ganaste esta planta!</h3>
       <div class="chat-box" id="chatBox"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
@@ -434,6 +619,36 @@ th { background: var(--green-100); color: var(--green-900); }
       </div>
     </div>
 
+  </div>
+
+  <!-- ---------- Ventana flotante: estado del jugador (siempre visible) ---------- -->
+  <div class="floating-widget hidden" id="floatingPlayerWidget">
+    <div class="fw-head">
+      <span>🎲 Sorteo en vivo</span>
+      <button id="floatingPlayerToggle" title="Minimizar/expandir">▾</button>
+    </div>
+    <div class="fw-body">
+      <div style="text-align:center;color:#c7d0c9;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;">Número cayendo</div>
+      <div class="fw-number" id="fwNumber">-</div>
+      <div class="fw-prize">
+        <img id="fwPrizeImg" src="" alt="premio">
+        <div>
+          <div id="fwPrizeName" style="font-weight:700;"></div>
+          <div id="fwCardsProgress" style="font-size:0.72rem;color:#c7d0c9;"></div>
+        </div>
+      </div>
+      <div class="fw-progress-bar"><div class="fw-progress-fill" id="fwProgressFill" style="width:0%;"></div></div>
+    </div>
+  </div>
+
+  <!-- ---------- Ventana flotante: publicidad en video (configurada por el administrador) ---------- -->
+  <div class="floating-widget hidden" id="floatingAdWidget">
+    <div class="fw-head">
+      <span>📢 Publicidad</span>
+      <button id="floatingAdToggle" title="Minimizar/expandir">▾</button>
+    </div>
+    <div class="fw-body" id="floatingAdBody"></div>
+    <div class="fw-ad-label">Publicidad</div>
   </div>
 </div>
 
@@ -458,15 +673,16 @@ th { background: var(--green-100); color: var(--green-900); }
 
     <div class="card-panel">
       <h2>🎁 Base de premios a sortear</h2>
-      <p style="color:var(--gray-600);font-size:0.9rem;">Registra plantas y kits (jardín, plantas, fertilizante). Cada uno podrá usarse para crear un sorteo.</p>
+      <p style="color:var(--gray-600);font-size:0.9rem;">Registra plantas o kits (jardín, plantas, fertilizante). Cada uno podrá usarse para crear un sorteo.</p>
 
       <div id="plantForm">
         <input type="hidden" id="plantEditId">
-        <select id="plantType">
-          <option value="planta">🌱 Planta</option>
+        <label style="font-size:0.8rem;color:var(--gray-600);display:block;margin-bottom:4px;">Tipo de premio</label>
+        <select id="plantPrizeType">
+          <option value="planta">🌿 Planta</option>
           <option value="kit_jardin">🧰 Kit de jardín</option>
           <option value="kit_plantas">🪴 Kit de plantas</option>
-          <option value="kit_fertilizante">🌾 Kit de fertilizante</option>
+          <option value="kit_fertilizante">🌱 Kit de fertilizante</option>
         </select>
         <input type="text" id="plantName" placeholder="Nombre del premio (ej: Monstera Deliciosa, Kit de jardín básico)">
         <textarea id="plantDesc" placeholder="Descripción del juego / del premio (ej: reglas, detalles del premio)" rows="2"></textarea>
@@ -487,7 +703,7 @@ th { background: var(--green-100); color: var(--green-900); }
           <img id="plantImagePreview3" class="upload-preview hidden" alt="vista previa foto 3">
         </div>
 
-        <button class="btn" id="savePlantBtn">Guardar premio</button>
+        <button class="btn" id="savePlantBtn">Guardar planta</button>
         <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
       </div>
 
@@ -507,12 +723,42 @@ th { background: var(--green-100); color: var(--green-900); }
             <option value="cross">Patrón ganador: Forma de cruz</option>
             <option value="x">Patrón ganador: Forma de X</option>
           </select>
-          <button class="btn" id="createGameBtn">Crear nuevo sorteo con este premio</button>
+          <button class="btn" id="createGameBtn">Crear nuevo sorteo con esta planta</button>
         </div>
         <div>
           <select id="gameSelector"></select>
         </div>
       </div>
+    </div>
+
+    <div class="card-panel">
+      <h2>📢 Publicidad flotante (video para los jugadores)</h2>
+      <p style="color:var(--gray-600);font-size:0.9rem;">
+        Este video aparece en una ventana flotante para los jugadores mientras hay un sorteo activo.
+        Puedes usar un enlace (recomendado, ej. un video MP4 directo o de YouTube/Vimeo) o subir un
+        archivo pequeño. Como esta app no usa Firebase Storage, el archivo subido debe ser muy liviano
+        (unos segundos, silencioso) para caber en Firestore; si tu video pesa más, usa la opción de enlace.
+      </p>
+
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;margin-bottom:12px;">
+        <input type="checkbox" id="adEnabledCheckbox" style="width:auto;margin:0;">
+        Mostrar ventana flotante de publicidad a los jugadores
+      </label>
+
+      <label style="font-size:0.8rem;color:var(--gray-600);display:block;margin-bottom:4px;">Enlace de video (MP4, YouTube o Vimeo)</label>
+      <input type="text" id="adVideoUrl" placeholder="https://... (mp4 directo, YouTube o Vimeo)">
+
+      <div class="upload-field">
+        <label>O sube un archivo de video pequeño (opcional)</label>
+        <input type="file" id="adVideoFile" accept="video/*">
+        <p id="adVideoFileStatus" style="font-size:0.78rem;color:var(--gray-600);margin:4px 0 0 0;"></p>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn" id="saveAdSettingsBtn">Guardar publicidad</button>
+        <button class="btn secondary" id="clearAdVideoBtn">Quitar video subido</button>
+      </div>
+      <p id="adSettingsStatus" style="font-size:0.85rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
     </div>
 
     <div class="card-panel hidden" id="gameControlPanel">
@@ -730,30 +976,77 @@ function checkPattern(marked, pattern) {
 
 const BINGO_LETTERS = ["B", "I", "N", "G", "O"];
 
-// ============================================================
-// TIPOS DE PREMIO (plantas y otros kits para sortear)
-// ============================================================
-const PRIZE_TYPES = {
-  planta:           { label: "Planta",             icon: "🌱" },
-  kit_jardin:       { label: "Kit de jardín",       icon: "🧰" },
-  kit_plantas:      { label: "Kit de plantas",      icon: "🪴" },
-  kit_fertilizante: { label: "Kit de fertilizante", icon: "🌾" }
-};
-
-function prizeIcon(type) {
-  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).icon;
-}
-
-function prizeTypeLabel(type) {
-  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).label;
-}
-
 function letterForNumber(n) {
   if (n <= 15) return "B";
   if (n <= 30) return "I";
   if (n <= 45) return "N";
   if (n <= 60) return "G";
   return "O";
+}
+
+// ============================================================
+// TIPOS DE PREMIO (plantas y kits)
+// ============================================================
+const PRIZE_TYPES = {
+  planta:            { emoji: "🌿", label: "Planta" },
+  kit_jardin:        { emoji: "🧰", label: "Kit de jardín" },
+  kit_plantas:       { emoji: "🪴", label: "Kit de plantas" },
+  kit_fertilizante:  { emoji: "🌱", label: "Kit de fertilizante" }
+};
+function prizeTypeInfo(type) {
+  return PRIZE_TYPES[type] || PRIZE_TYPES.planta;
+}
+
+// ============================================================
+// SONIDOS DE NOTIFICACIÓN (generados con Web Audio API, sin archivos)
+// ============================================================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (err) { return null; }
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+// Desbloquea el audio en el primer toque/clic del usuario (requerido por navegadores móviles)
+["click", "touchstart", "keydown"].forEach((evt) => {
+  document.addEventListener(evt, () => { getAudioCtx(); }, { once: true, passive: true });
+});
+
+function playTone(freq, startTime, duration, type = "sine", gainPeak = 0.18) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(gainPeak, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.02);
+}
+
+// Sonido corto tipo "campanita" cuando se canta un número nuevo
+function playCallSound() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  playTone(880, t, 0.14, "sine", 0.16);
+  playTone(1318.5, t + 0.09, 0.18, "sine", 0.13);
+}
+
+// Fanfarria breve cuando alguien gana el sorteo
+function playWinnerSound() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+    playTone(freq, t + i * 0.13, 0.3, "triangle", 0.2);
+  });
 }
 
 // Construye un enlace de "click-to-chat" de WhatsApp con un mensaje pre-escrito.
@@ -906,6 +1199,7 @@ function cleanupAllListeners() {
   if (typeof plantsUnsub === "function") plantsUnsub();
   if (typeof gamesSelectorUnsub === "function") gamesSelectorUnsub();
   if (typeof notificationsUnsub === "function") notificationsUnsub();
+  if (typeof adSettingsUnsub === "function") adSettingsUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -1008,14 +1302,22 @@ let proofImageDataByCard = {};  // foto de comprobante pendiente de enviar, por 
 let currentGameData = null;
 let lastAnnouncedWinnerId = null;
 let userNotificationsUnsub = null;
+let lastCalledCount = 0;        // para detectar números nuevos y reproducir el sonido
+let lastCalledNumberValue = null; // último número cantado, para resaltar la celda en el cartón
+let adSettingsUnsub = null;
+let currentAdSettings = null;
 
 function initUserView() {
   // Reiniciar estado de paneles
   document.getElementById("activeGamePanel").classList.add("hidden");
   document.getElementById("chatPanel").classList.add("hidden");
+  document.getElementById("floatingPlayerWidget").classList.add("hidden");
   selectedGameId = null;
   myCards = [];
   proofImageDataByCard = {};
+  lastCalledCount = 0;
+  lastCalledNumberValue = null;
+  listenAdSettings();
 
   if (gamesListUnsub) gamesListUnsub();
   listenUserNotifications();
@@ -1030,13 +1332,14 @@ function initUserView() {
       }
       snap.forEach((doc) => {
         const g = doc.data();
+        const prizeInfo = prizeTypeInfo(g.prizeType);
         const div = document.createElement("div");
         div.className = "plant-item";
         div.style.cursor = "pointer";
         div.innerHTML = `
           <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
           <div class="plant-body">
-            <span class="pattern-tag">${prizeIcon(g.prizeType)} ${prizeTypeLabel(g.prizeType)}</span>
+            <span class="prize-type-badge">${prizeInfo.emoji} ${prizeInfo.label}</span>
             <h4>${g.plantName}</h4>
             <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
             <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
@@ -1118,6 +1421,8 @@ function selectGame(gameId) {
   selectedGameId = gameId;
   proofImageDataByCard = {};
   lastAnnouncedWinnerId = null;
+  lastCalledCount = 0;
+  lastCalledNumberValue = null;
   document.getElementById("activeGamePanel").classList.remove("hidden");
   document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
 
@@ -1136,7 +1441,10 @@ function selectGame(gameId) {
 function renderGame(gameId, g) {
   currentGameData = g;
 
-  document.getElementById("activePlantTitle").textContent = `${prizeIcon(g.prizeType)} ${g.plantName}`;
+  const prizeInfo = prizeTypeInfo(g.prizeType);
+  document.getElementById("activePlantTitle").innerHTML =
+    `${prizeInfo.emoji} ${g.plantName} <span class="netflix-live-tag${g.status === "running" ? "" : " hidden"}" id="liveTag"><span class="dot"></span>En vivo</span>`;
+  document.getElementById("activePlantTitleOverlay").textContent = `${prizeInfo.emoji} ${g.plantName}`;
   document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
   document.getElementById("gameWinPatternLabel").textContent = "🎯 " + patternLabel(g.winPattern);
 
@@ -1159,9 +1467,19 @@ function renderGame(gameId, g) {
     historyEl.appendChild(chip);
   });
 
+  // ---- Sonido y resaltado del número recién cantado (la máquina ayuda al jugador) ----
+  if (called.length > lastCalledCount) {
+    lastCalledNumberValue = currentNum;
+    if (lastCalledCount > 0) playCallSound(); // evita sonar al abrir un sorteo ya avanzado
+  }
+  lastCalledCount = called.length;
+
   if (myCards.length) {
     updateAllCardMarks(called);
   }
+
+  updateFloatingPlayerWidget(g, called, currentNum, prizeInfo);
+  renderFloatingAdWidget();
 
   // ---- Anuncio de ganador a TODOS los jugadores que estén viendo el sorteo ----
   const winnerBanner = document.getElementById("gameWinnerBanner");
@@ -1176,6 +1494,7 @@ function renderGame(gameId, g) {
 
     if (g.winnerUserId && g.winnerUserId !== lastAnnouncedWinnerId) {
       lastAnnouncedWinnerId = g.winnerUserId;
+      playWinnerSound();
       if (g.winnerUserId === currentUser.uid) {
         alert(`🏆 ¡Felicidades! Ganaste el sorteo de "${g.plantName}".\n\nPatrón completado: ${patternLabel(g.winPattern)}.\nRevisa el chat para coordinar la entrega con el administrador.`);
       } else {
@@ -1206,16 +1525,12 @@ function renderPlantGallery(images) {
   thumbs.innerHTML = "";
 
   if (list.length > 1) {
-    list.forEach((url, idx) => {
+    list.forEach((url) => {
       const t = document.createElement("img");
       t.src = url;
-      t.className = "gallery-thumb" + (idx === 0 ? " active" : "");
-      t.alt = "foto del premio";
-      t.addEventListener("click", () => {
-        main.src = url;
-        thumbs.querySelectorAll(".gallery-thumb").forEach((th) => th.classList.remove("active"));
-        t.classList.add("active");
-      });
+      t.className = "gallery-thumb";
+      t.alt = "foto de la planta";
+      t.addEventListener("click", () => { main.src = url; });
       thumbs.appendChild(t);
     });
   }
@@ -1232,6 +1547,13 @@ function listenToMyCards(gameId) {
         }
         if (Array.isArray(data.marked) && typeof data.marked[0] !== "object") {
           data.marked = unflattenGrid(data.marked);
+        }
+        // Auto-corrección: el marcado se recalcula siempre a partir de los números
+        // ya cantados en el sorteo (fuente de verdad), en vez de confiar ciegamente
+        // en lo último guardado. Así un cartón recién aprobado, o que por cualquier
+        // razón quedó desincronizado, siempre queda marcado correctamente al instante.
+        if (data.paymentStatus === "approved" && currentGameData) {
+          data.marked = recalculateMarks(data.numbers, currentGameData.calledNumbers || []);
         }
         return { id: doc.id, data };
       });
@@ -1291,9 +1613,7 @@ function renderMyCards() {
         <p class="empty-state hidden" data-win-msg="${card.id}"></p>
       `;
       container.appendChild(panel);
-      const calledNums = (currentGameData && currentGameData.calledNumbers) || [];
-      const currentNumber = calledNums.length ? calledNums[calledNums.length - 1] : null;
-      renderBingoCard(card.data.numbers, card.data.marked, card.id, currentNumber);
+      renderBingoCard(card.data.numbers, card.data.marked, card.id, lastCalledNumberValue);
       if (card.data.completed) {
         const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
         const msgEl = panel.querySelector(`[data-win-msg="${card.id}"]`);
@@ -1315,13 +1635,18 @@ document.getElementById("requestCardBtn").addEventListener("click", async () => 
   if (!selectedGameId) return;
   if (currentGameData && currentGameData.status === "finished") return;
   const { numbers, marked } = generateBingoCard();
+  // Si el sorteo ya lleva números cantados, se pre-marcan de una vez en el
+  // cartón nuevo (apenas se apruebe el pago quedará al día automáticamente).
+  const alreadyCalled = (currentGameData && currentGameData.calledNumbers) || [];
+  const preMarked = alreadyCalled.length ? recalculateMarks(numbers, alreadyCalled) : marked;
+
   const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc();
   await cardRef.set({
     userId: currentUser.uid,
     userName: currentUserData.name,
     userEmail: currentUserData.email,
     numbers: flattenGrid(numbers),
-    marked: flattenGrid(marked),
+    marked: flattenGrid(preMarked),
     paymentProofUrl: null,
     paymentStatus: "pending",
     completed: false,
@@ -1379,7 +1704,7 @@ async function handleUploadProof(cardId) {
   }
 }
 
-function renderBingoCard(numbers, marked, cardId, currentNumber) {
+function renderBingoCard(numbers, marked, cardId, justCalledNumber) {
   const el = document.querySelector(`[data-bingo-card="${cardId}"]`);
   if (!el) return;
   el.innerHTML = "";
@@ -1392,12 +1717,12 @@ function renderBingoCard(numbers, marked, cardId, currentNumber) {
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 5; col++) {
       const val = numbers[row][col];
-      const isCurrent = currentNumber != null && val === currentNumber;
+      const isJustCalled = justCalledNumber != null && val === justCalledNumber;
       const cell = document.createElement("div");
       cell.className = "bingo-cell"
         + (marked[row][col] ? " marked" : "")
         + (val === "FREE" ? " free" : "")
-        + (isCurrent ? " current-call" : "");
+        + (isJustCalled ? " just-called" : "");
       cell.textContent = val;
       el.appendChild(cell);
     }
@@ -1406,7 +1731,6 @@ function renderBingoCard(numbers, marked, cardId, currentNumber) {
 
 async function updateAllCardMarks(calledNumbers) {
   const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
-  const currentNumber = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
 
   for (const card of myCards) {
     if (card.data.paymentStatus !== "approved") continue;
@@ -1416,7 +1740,7 @@ async function updateAllCardMarks(calledNumbers) {
     const nowWinning = checkPattern(newMarked, pattern);
 
     card.data.marked = newMarked;
-    renderBingoCard(card.data.numbers, newMarked, card.id, currentNumber);
+    renderBingoCard(card.data.numbers, newMarked, card.id, lastCalledNumberValue);
 
     const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(card.id);
     cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
@@ -1455,8 +1779,8 @@ async function tryDeclareWinner(cardRef) {
   }
 }
 
-// Crea una notificación persistente para los jugadores del sorteo (avisando quién ganó)
-// y también para el administrador (para que sepa que hubo un ganador).
+// Crea una notificación persistente para todos los jugadores que tengan
+// al menos un cartón en este sorteo, avisando quién ganó.
 async function notifyAllParticipantsOfWinner() {
   try {
     const cardsSnap = await db.collection("games").doc(selectedGameId).collection("cards").get();
@@ -1471,13 +1795,108 @@ async function notifyAllParticipantsOfWinner() {
       pattern: (currentGameData && currentGameData.winPattern) || "fullCard",
       recipientIds,
       readBy: [],
-      read: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch (err) {
     console.error("No se pudo notificar a los participantes del sorteo:", err);
   }
 }
+
+// ============================================================
+// VENTANA FLOTANTE DEL JUGADOR (siempre visible mientras hay sorteo activo)
+// ============================================================
+function updateFloatingPlayerWidget(g, called, currentNum, prizeInfo) {
+  const widget = document.getElementById("floatingPlayerWidget");
+  if (g.status === "finished") {
+    widget.classList.add("hidden");
+    return;
+  }
+  widget.classList.remove("hidden");
+
+  document.getElementById("fwNumber").textContent =
+    currentNum === "-" ? "-" : `${letterForNumber(currentNum)}-${currentNum}`;
+
+  const galleryImages = (g.plantImages && g.plantImages.length) ? g.plantImages : (g.plantImageUrl ? [g.plantImageUrl] : []);
+  document.getElementById("fwPrizeImg").src = galleryImages[0] || "";
+  document.getElementById("fwPrizeName").textContent = `${prizeInfo.emoji} ${g.plantName}`;
+
+  const approvedCards = myCards.filter((c) => c.data.paymentStatus === "approved");
+  document.getElementById("fwCardsProgress").textContent =
+    approvedCards.length ? `${approvedCards.length} cartón(es) activo(s)` : "Aún sin cartones activos";
+
+  // Progreso del cartón más avanzado (más celdas marcadas), como ayuda visual rápida
+  let bestRatio = 0;
+  approvedCards.forEach((c) => {
+    let count = 0;
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 5; col++) if (c.data.marked[row][col]) count++;
+    bestRatio = Math.max(bestRatio, count / 25);
+  });
+  document.getElementById("fwProgressFill").style.width = `${Math.round(bestRatio * 100)}%`;
+}
+
+document.getElementById("floatingPlayerToggle").addEventListener("click", () => {
+  const widget = document.getElementById("floatingPlayerWidget");
+  widget.classList.toggle("minimized");
+  document.getElementById("floatingPlayerToggle").textContent = widget.classList.contains("minimized") ? "▸" : "▾";
+});
+
+// ============================================================
+// VENTANA FLOTANTE DE PUBLICIDAD (video configurado por el administrador)
+// ============================================================
+function listenAdSettings() {
+  if (adSettingsUnsub) adSettingsUnsub();
+  adSettingsUnsub = db.collection("settings").doc("adConfig").onSnapshot((doc) => {
+    currentAdSettings = doc.exists ? doc.data() : null;
+    renderFloatingAdWidget();
+  });
+}
+
+function youtubeEmbedUrl(url) {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/);
+  return m ? `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1&loop=1&playlist=${m[1]}` : null;
+}
+function vimeoEmbedUrl(url) {
+  const m = url.match(/vimeo\.com\/(\d+)/);
+  return m ? `https://player.vimeo.com/video/${m[1]}?autoplay=1&muted=1&loop=1` : null;
+}
+
+function renderFloatingAdWidget() {
+  const widget = document.getElementById("floatingAdWidget");
+  const body = document.getElementById("floatingAdBody");
+
+  // Solo se muestra si el administrador la activó, hay sorteo activo, y hay un video configurado
+  const gameActive = currentGameData && currentGameData.status !== "finished" && selectedGameId;
+  const hasVideo = currentAdSettings && currentAdSettings.enabled &&
+    (currentAdSettings.videoUrl || currentAdSettings.videoData);
+
+  if (!gameActive || !hasVideo) {
+    widget.classList.add("hidden");
+    body.innerHTML = "";
+    return;
+  }
+
+  widget.classList.remove("hidden");
+
+  const url = (currentAdSettings.videoUrl || "").trim();
+  let embedUrl = null;
+  if (url) embedUrl = youtubeEmbedUrl(url) || vimeoEmbedUrl(url);
+
+  if (embedUrl) {
+    body.innerHTML = `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  } else if (url) {
+    body.innerHTML = `<video src="${url}" autoplay muted loop playsinline></video>`;
+  } else if (currentAdSettings.videoData) {
+    body.innerHTML = `<video src="${currentAdSettings.videoData}" autoplay muted loop playsinline></video>`;
+  } else {
+    widget.classList.add("hidden");
+  }
+}
+
+document.getElementById("floatingAdToggle").addEventListener("click", () => {
+  const widget = document.getElementById("floatingAdWidget");
+  widget.classList.toggle("minimized");
+  document.getElementById("floatingAdToggle").textContent = widget.classList.contains("minimized") ? "▸" : "▾";
+});
 
 function listenToChat(gameId) {
   chatUnsub = db.collection("games").doc(gameId).collection("chat")
@@ -1547,6 +1966,78 @@ let plantImageData = ["", "", ""];
   });
 });
 
+// ============================================================
+// PUBLICIDAD FLOTANTE (video configurable por el administrador)
+// ============================================================
+let adVideoFileData = null; // data URL del video subido (si se usó la opción de archivo)
+const AD_VIDEO_MAX_BYTES = 700000; // ~0.7MB crudos, deja margen bajo el límite de 1MB por documento de Firestore
+
+document.getElementById("adVideoFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const statusEl = document.getElementById("adVideoFileStatus");
+  if (!file) { adVideoFileData = null; statusEl.textContent = ""; return; }
+  if (file.size > AD_VIDEO_MAX_BYTES) {
+    statusEl.textContent = `⚠️ Ese archivo pesa ${(file.size / 1024 / 1024).toFixed(2)}MB. Debe pesar menos de ~0.7MB (unos pocos segundos de video, sin audio) para poder guardarse en Firestore. Para videos más largos, usa el campo de enlace de video en su lugar.`;
+    e.target.value = "";
+    adVideoFileData = null;
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    adVideoFileData = ev.target.result;
+    statusEl.textContent = `✅ Video listo (${(file.size / 1024).toFixed(0)} KB). Presiona "Guardar publicidad" para aplicarlo.`;
+  };
+  reader.onerror = () => { statusEl.textContent = "No se pudo leer el archivo de video."; };
+  reader.readAsDataURL(file);
+});
+
+function loadAdSettings() {
+  db.collection("settings").doc("adConfig").get().then((doc) => {
+    const data = doc.exists ? doc.data() : {};
+    document.getElementById("adEnabledCheckbox").checked = !!data.enabled;
+    document.getElementById("adVideoUrl").value = data.videoUrl || "";
+    adVideoFileData = data.videoData || null;
+    document.getElementById("adVideoFileStatus").textContent = data.videoData
+      ? "Ya hay un video subido guardado. Sube uno nuevo para reemplazarlo, o usa \"Quitar video subido\"."
+      : "";
+  }).catch((err) => {
+    console.error("No se pudo cargar la configuración de publicidad:", err);
+  });
+}
+
+document.getElementById("saveAdSettingsBtn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("adSettingsStatus");
+  const enabled = document.getElementById("adEnabledCheckbox").checked;
+  const videoUrl = document.getElementById("adVideoUrl").value.trim();
+  statusEl.textContent = "Guardando...";
+  try {
+    await db.collection("settings").doc("adConfig").set({
+      enabled,
+      videoUrl: videoUrl || null,
+      videoData: adVideoFileData || null,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    statusEl.textContent = "✅ Publicidad guardada. Los jugadores con un sorteo activo la verán en su ventana flotante.";
+  } catch (err) {
+    statusEl.textContent = "Error al guardar: " + err.message
+      + (err.code === "invalid-argument" ? " (el video pesa demasiado para Firestore; usa un enlace de video en su lugar)" : "");
+  }
+});
+
+document.getElementById("clearAdVideoBtn").addEventListener("click", async () => {
+  adVideoFileData = null;
+  document.getElementById("adVideoFile").value = "";
+  document.getElementById("adVideoFileStatus").textContent = "";
+  const statusEl = document.getElementById("adSettingsStatus");
+  statusEl.textContent = "Guardando...";
+  try {
+    await db.collection("settings").doc("adConfig").set({ videoData: null }, { merge: true });
+    statusEl.textContent = "✅ Video subido eliminado. El enlace de video (si hay uno) se mantiene.";
+  } catch (err) {
+    statusEl.textContent = "Error: " + err.message;
+  }
+});
+
 function initAdminView() {
   document.getElementById("gameControlPanel").classList.add("hidden");
   document.getElementById("adminChatPanel").classList.add("hidden");
@@ -1554,6 +2045,7 @@ function initAdminView() {
   loadPlants();
   loadGamesSelector();
   listenNotifications();
+  loadAdSettings();
 }
 
 function listenNotifications() {
@@ -1585,12 +2077,9 @@ function renderNotifications(list) {
   list.forEach((n) => {
     const div = document.createElement("div");
     div.className = "notif-item";
-    const message = n.type === "game_winner"
-      ? `🏆 <strong>${n.winnerUserName || "Un jugador"}</strong> completó el patrón y ganó el sorteo`
-      : `<strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲`;
     div.innerHTML = `
       <div>
-        ${message}
+        <strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲
         <div style="font-size:0.8rem;color:var(--gray-600);">Sorteo: ${n.gameName || "—"}</div>
       </div>
       <button class="btn small" data-goto-game="${n.gameId}" data-notif-id="${n.id}">Revisar</button>
@@ -1619,7 +2108,7 @@ function loadPlants() {
     const list = document.getElementById("plantsList");
     const select = document.getElementById("plantSelectForGame");
     list.innerHTML = "";
-    select.innerHTML = "<option value=''>-- Selecciona un premio --</option>";
+    select.innerHTML = "<option value=''>-- Selecciona una planta --</option>";
 
     snap.forEach((doc) => {
       const p = doc.data();
@@ -1627,6 +2116,7 @@ function loadPlants() {
 
       const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
       const extraThumbs = images.slice(1).map(url => `<img src="${url}" alt="foto extra">`).join("");
+      const prizeInfo = prizeTypeInfo(p.prizeType);
 
       const item = document.createElement("div");
       item.className = "plant-item";
@@ -1634,7 +2124,7 @@ function loadPlants() {
         <img src="${images[0] || ''}" alt="${p.name}">
         ${extraThumbs ? `<div class="mini-thumbs">${extraThumbs}</div>` : ""}
         <div class="plant-body">
-          <span class="pattern-tag">${prizeIcon(p.type)} ${prizeTypeLabel(p.type)}</span>
+          <span class="prize-type-badge">${prizeInfo.emoji} ${prizeInfo.label}</span>
           <h4>${p.name}</h4>
           <p>${p.description || ""}</p>
           <p style="font-size:0.7rem;color:var(--gray-600);">${images.length} foto(s) cargada(s)</p>
@@ -1648,7 +2138,7 @@ function loadPlants() {
 
       const opt = document.createElement("option");
       opt.value = doc.id;
-      opt.textContent = `${prizeIcon(p.type)} ${p.name}`;
+      opt.textContent = `${prizeInfo.emoji} ${p.name}`;
       select.appendChild(opt);
     });
 
@@ -1667,7 +2157,7 @@ function editPlant(id) {
   plantImageData = [images[0] || "", images[1] || "", images[2] || ""];
 
   document.getElementById("plantEditId").value = id;
-  document.getElementById("plantType").value = p.type || "planta";
+  document.getElementById("plantPrizeType").value = p.prizeType || "planta";
   document.getElementById("plantName").value = p.name;
   document.getElementById("plantDesc").value = p.description || "";
 
@@ -1689,7 +2179,7 @@ function editPlant(id) {
 
 document.getElementById("cancelEditBtn").addEventListener("click", () => {
   document.getElementById("plantEditId").value = "";
-  document.getElementById("plantType").value = "planta";
+  document.getElementById("plantPrizeType").value = "planta";
   document.getElementById("plantName").value = "";
   document.getElementById("plantDesc").value = "";
   plantImageData = ["", "", ""];
@@ -1703,13 +2193,13 @@ document.getElementById("cancelEditBtn").addEventListener("click", () => {
 });
 
 async function deletePlant(id) {
-  if (!confirm("¿Eliminar este premio? Esta acción no se puede deshacer.")) return;
+  if (!confirm("¿Eliminar esta planta? Esta acción no se puede deshacer.")) return;
   await db.collection("plants").doc(id).delete();
 }
 
 document.getElementById("savePlantBtn").addEventListener("click", async () => {
   const id = document.getElementById("plantEditId").value;
-  const type = document.getElementById("plantType").value || "planta";
+  const prizeType = document.getElementById("plantPrizeType").value || "planta";
   const name = document.getElementById("plantName").value.trim();
   const description = document.getElementById("plantDesc").value.trim();
   const images = plantImageData.filter(Boolean);
@@ -1729,7 +2219,7 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
 
   try {
     const payload = {
-      type, name, description,
+      name, description, prizeType,
       imageUrl: images[0] || "",
       images,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1744,10 +2234,10 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
 
     document.getElementById("cancelEditBtn").click();
   } catch (err) {
-    alert("Error al guardar el premio: " + err.message);
+    alert("Error al guardar la planta: " + err.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Guardar premio";
+    btn.textContent = "Guardar planta";
   }
 });
 
@@ -1759,9 +2249,10 @@ function loadGamesSelector() {
     select.innerHTML = "<option value=''>-- Selecciona un sorteo --</option>";
     snap.forEach((doc) => {
       const g = doc.data();
+      const prizeInfo = prizeTypeInfo(g.prizeType);
       const opt = document.createElement("option");
       opt.value = doc.id;
-      opt.textContent = `${prizeIcon(g.prizeType)} ${g.plantName} (${statusLabelAdmin(g.status)})`;
+      opt.textContent = `${prizeInfo.emoji} ${g.plantName} (${statusLabelAdmin(g.status)})`;
       select.appendChild(opt);
     });
     if (prevValue) select.value = prevValue;
@@ -1775,7 +2266,7 @@ function statusLabelAdmin(status) {
 document.getElementById("createGameBtn").addEventListener("click", async () => {
   const plantId = document.getElementById("plantSelectForGame").value;
   if (!plantId) {
-    alert("Selecciona un premio primero.");
+    alert("Selecciona una planta primero.");
     return;
   }
   const plant = plantsCache[plantId];
@@ -1786,7 +2277,7 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
 
   const gameRef = await db.collection("games").add({
     plantId,
-    prizeType: plant.type || "planta",
+    prizeType: plant.prizeType || "planta",
     plantName: plant.name,
     plantDescription: plant.description || "",
     plantImageUrl: plantImages[0] || "",
@@ -1865,8 +2356,9 @@ document.getElementById("saveGameSettingsBtn").addEventListener("click", async (
 });
 
 function renderAdminGame(gameId, g) {
+  const prizeInfo = prizeTypeInfo(g.prizeType);
   document.getElementById("gameControlTitle").textContent =
-    `Sorteo: ${prizeIcon(g.prizeType)} ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
+    `Sorteo: ${prizeInfo.emoji} ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
 
   const called = g.calledNumbers || [];
   const currentNum = called.length ? called[called.length - 1] : "-";
@@ -1890,7 +2382,7 @@ function renderAdminGame(gameId, g) {
 
     const waLink = whatsappLink(
       g.winnerUserPhone,
-      `¡Hola ${g.winnerUserName}! 🎉 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu premio 🎁`
+      `¡Hola ${g.winnerUserName}! 🌿 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu planta 🎉`
     );
     const waButton = waLink
       ? `<a class="btn small" style="width:auto;background:#25D366;display:inline-block;text-decoration:none;margin-top:8px;" target="_blank" rel="noopener" href="${waLink}">📲 Enviar WhatsApp al ganador</a>`
@@ -1899,7 +2391,7 @@ function renderAdminGame(gameId, g) {
     banner.innerHTML = `
       <span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>
       <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
-        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega del premio por WhatsApp o por el chat de abajo.
+        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega de la planta por WhatsApp o por el chat de abajo.
       </p>
       ${waButton}
     `;
@@ -1910,7 +2402,7 @@ function renderAdminGame(gameId, g) {
     // Alerta instantánea al administrador la primera vez que se detecta un ganador
     if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
       lastAlertedWinnerId = g.winnerUserId;
-      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega del premio.`);
+      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega de la planta.`);
     }
   } else {
     banner.classList.add("hidden");
