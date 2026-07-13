@@ -178,13 +178,12 @@ button { cursor: pointer; font-family: inherit; }
 .bingo-cell.free { background: var(--amber-500); color: white; font-size: 0.75rem; }
 .bingo-cell.current-call {
   border-color: var(--amber-500);
-  box-shadow: 0 0 0 3px rgba(217,155,63,0.5);
-  animation: currentCallPulse 1.2s infinite;
+  box-shadow: 0 0 0 3px rgba(217,155,63,0.55);
+  animation: currentCallPulse 1.4s ease-in-out infinite;
 }
 @keyframes currentCallPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(217,155,63,0.65); }
-  70%  { box-shadow: 0 0 0 10px rgba(217,155,63,0); }
-  100% { box-shadow: 0 0 0 0 rgba(217,155,63,0); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(217,155,63,0.55); }
+  50%      { box-shadow: 0 0 0 7px rgba(217,155,63,0.9); }
 }
 
 /* ---------- Called number display ---------- */
@@ -256,6 +255,7 @@ th { background: var(--green-100); color: var(--green-900); }
   border: 2px solid var(--gray-300); cursor: pointer; transition: border-color 0.2s, transform 0.2s;
 }
 .gallery-thumb:hover { border-color: var(--green-500); transform: scale(1.05); }
+.gallery-thumb.active { border-color: var(--green-600); box-shadow: 0 0 0 2px var(--green-500); }
 .plant-item .mini-thumbs { display: flex; gap: 4px; padding: 0 10px 10px; }
 .plant-item .mini-thumbs img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 1px solid var(--gray-300); }
 
@@ -403,7 +403,7 @@ th { background: var(--green-100); color: var(--green-900); }
         <span class="pattern-tag" id="gameWinPatternLabel">Cartón lleno</span>
         <div class="grid-2">
           <div>
-            <img id="activePlantImg" src="" alt="planta" style="width:100%;border-radius:10px;max-height:220px;object-fit:cover;">
+            <img id="activePlantImg" src="" alt="premio" style="width:100%;border-radius:10px;max-height:340px;object-fit:contain;background:var(--gray-100);display:block;">
             <div class="gallery-thumbs" id="activePlantThumbs"></div>
             <p id="activePlantDesc" style="color:var(--gray-600);"></p>
           </div>
@@ -426,7 +426,7 @@ th { background: var(--green-100); color: var(--green-900); }
     </div>
 
     <div class="card-panel hidden" id="chatPanel">
-      <h3>💬 Chat con el administrador — ¡Ganaste esta planta!</h3>
+      <h3>💬 Chat con el administrador — ¡Ganaste este premio!</h3>
       <div class="chat-box" id="chatBox"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
@@ -457,13 +457,19 @@ th { background: var(--green-100); color: var(--green-900); }
     </div>
 
     <div class="card-panel">
-      <h2>🪴 Base de plantas a sortear</h2>
-      <p style="color:var(--gray-600);font-size:0.9rem;">Registra hasta ~20 plantas. Cada una podrá usarse para crear un sorteo.</p>
+      <h2>🎁 Base de premios a sortear</h2>
+      <p style="color:var(--gray-600);font-size:0.9rem;">Registra plantas y kits (jardín, plantas, fertilizante). Cada uno podrá usarse para crear un sorteo.</p>
 
       <div id="plantForm">
         <input type="hidden" id="plantEditId">
-        <input type="text" id="plantName" placeholder="Nombre de la planta (ej: Monstera Deliciosa)">
-        <textarea id="plantDesc" placeholder="Descripción del juego / de la planta (ej: reglas, detalles del premio)" rows="2"></textarea>
+        <select id="plantType">
+          <option value="planta">🌱 Planta</option>
+          <option value="kit_jardin">🧰 Kit de jardín</option>
+          <option value="kit_plantas">🪴 Kit de plantas</option>
+          <option value="kit_fertilizante">🌾 Kit de fertilizante</option>
+        </select>
+        <input type="text" id="plantName" placeholder="Nombre del premio (ej: Monstera Deliciosa, Kit de jardín básico)">
+        <textarea id="plantDesc" placeholder="Descripción del juego / del premio (ej: reglas, detalles del premio)" rows="2"></textarea>
 
         <div class="upload-field">
           <label>Foto 1</label>
@@ -481,7 +487,7 @@ th { background: var(--green-100); color: var(--green-900); }
           <img id="plantImagePreview3" class="upload-preview hidden" alt="vista previa foto 3">
         </div>
 
-        <button class="btn" id="savePlantBtn">Guardar planta</button>
+        <button class="btn" id="savePlantBtn">Guardar premio</button>
         <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
       </div>
 
@@ -501,7 +507,7 @@ th { background: var(--green-100); color: var(--green-900); }
             <option value="cross">Patrón ganador: Forma de cruz</option>
             <option value="x">Patrón ganador: Forma de X</option>
           </select>
-          <button class="btn" id="createGameBtn">Crear nuevo sorteo con esta planta</button>
+          <button class="btn" id="createGameBtn">Crear nuevo sorteo con este premio</button>
         </div>
         <div>
           <select id="gameSelector"></select>
@@ -723,6 +729,24 @@ function checkPattern(marked, pattern) {
 }
 
 const BINGO_LETTERS = ["B", "I", "N", "G", "O"];
+
+// ============================================================
+// TIPOS DE PREMIO (plantas y otros kits para sortear)
+// ============================================================
+const PRIZE_TYPES = {
+  planta:           { label: "Planta",             icon: "🌱" },
+  kit_jardin:       { label: "Kit de jardín",       icon: "🧰" },
+  kit_plantas:      { label: "Kit de plantas",      icon: "🪴" },
+  kit_fertilizante: { label: "Kit de fertilizante", icon: "🌾" }
+};
+
+function prizeIcon(type) {
+  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).icon;
+}
+
+function prizeTypeLabel(type) {
+  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).label;
+}
 
 function letterForNumber(n) {
   if (n <= 15) return "B";
@@ -1012,6 +1036,7 @@ function initUserView() {
         div.innerHTML = `
           <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
           <div class="plant-body">
+            <span class="pattern-tag">${prizeIcon(g.prizeType)} ${prizeTypeLabel(g.prizeType)}</span>
             <h4>${g.plantName}</h4>
             <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
             <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
@@ -1111,7 +1136,7 @@ function selectGame(gameId) {
 function renderGame(gameId, g) {
   currentGameData = g;
 
-  document.getElementById("activePlantTitle").textContent = `🌱 ${g.plantName}`;
+  document.getElementById("activePlantTitle").textContent = `${prizeIcon(g.prizeType)} ${g.plantName}`;
   document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
   document.getElementById("gameWinPatternLabel").textContent = "🎯 " + patternLabel(g.winPattern);
 
@@ -1181,12 +1206,16 @@ function renderPlantGallery(images) {
   thumbs.innerHTML = "";
 
   if (list.length > 1) {
-    list.forEach((url) => {
+    list.forEach((url, idx) => {
       const t = document.createElement("img");
       t.src = url;
-      t.className = "gallery-thumb";
-      t.alt = "foto de la planta";
-      t.addEventListener("click", () => { main.src = url; });
+      t.className = "gallery-thumb" + (idx === 0 ? " active" : "");
+      t.alt = "foto del premio";
+      t.addEventListener("click", () => {
+        main.src = url;
+        thumbs.querySelectorAll(".gallery-thumb").forEach((th) => th.classList.remove("active"));
+        t.classList.add("active");
+      });
       thumbs.appendChild(t);
     });
   }
@@ -1590,7 +1619,7 @@ function loadPlants() {
     const list = document.getElementById("plantsList");
     const select = document.getElementById("plantSelectForGame");
     list.innerHTML = "";
-    select.innerHTML = "<option value=''>-- Selecciona una planta --</option>";
+    select.innerHTML = "<option value=''>-- Selecciona un premio --</option>";
 
     snap.forEach((doc) => {
       const p = doc.data();
@@ -1605,6 +1634,7 @@ function loadPlants() {
         <img src="${images[0] || ''}" alt="${p.name}">
         ${extraThumbs ? `<div class="mini-thumbs">${extraThumbs}</div>` : ""}
         <div class="plant-body">
+          <span class="pattern-tag">${prizeIcon(p.type)} ${prizeTypeLabel(p.type)}</span>
           <h4>${p.name}</h4>
           <p>${p.description || ""}</p>
           <p style="font-size:0.7rem;color:var(--gray-600);">${images.length} foto(s) cargada(s)</p>
@@ -1618,7 +1648,7 @@ function loadPlants() {
 
       const opt = document.createElement("option");
       opt.value = doc.id;
-      opt.textContent = p.name;
+      opt.textContent = `${prizeIcon(p.type)} ${p.name}`;
       select.appendChild(opt);
     });
 
@@ -1637,6 +1667,7 @@ function editPlant(id) {
   plantImageData = [images[0] || "", images[1] || "", images[2] || ""];
 
   document.getElementById("plantEditId").value = id;
+  document.getElementById("plantType").value = p.type || "planta";
   document.getElementById("plantName").value = p.name;
   document.getElementById("plantDesc").value = p.description || "";
 
@@ -1658,6 +1689,7 @@ function editPlant(id) {
 
 document.getElementById("cancelEditBtn").addEventListener("click", () => {
   document.getElementById("plantEditId").value = "";
+  document.getElementById("plantType").value = "planta";
   document.getElementById("plantName").value = "";
   document.getElementById("plantDesc").value = "";
   plantImageData = ["", "", ""];
@@ -1671,22 +1703,23 @@ document.getElementById("cancelEditBtn").addEventListener("click", () => {
 });
 
 async function deletePlant(id) {
-  if (!confirm("¿Eliminar esta planta? Esta acción no se puede deshacer.")) return;
+  if (!confirm("¿Eliminar este premio? Esta acción no se puede deshacer.")) return;
   await db.collection("plants").doc(id).delete();
 }
 
 document.getElementById("savePlantBtn").addEventListener("click", async () => {
   const id = document.getElementById("plantEditId").value;
+  const type = document.getElementById("plantType").value || "planta";
   const name = document.getElementById("plantName").value.trim();
   const description = document.getElementById("plantDesc").value.trim();
   const images = plantImageData.filter(Boolean);
 
   if (!name) {
-    alert("El nombre de la planta es obligatorio.");
+    alert("El nombre del premio es obligatorio.");
     return;
   }
   if (!images.length) {
-    alert("Sube al menos una foto de la planta.");
+    alert("Sube al menos una foto del premio.");
     return;
   }
 
@@ -1696,7 +1729,7 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
 
   try {
     const payload = {
-      name, description,
+      type, name, description,
       imageUrl: images[0] || "",
       images,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1711,10 +1744,10 @@ document.getElementById("savePlantBtn").addEventListener("click", async () => {
 
     document.getElementById("cancelEditBtn").click();
   } catch (err) {
-    alert("Error al guardar la planta: " + err.message);
+    alert("Error al guardar el premio: " + err.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Guardar planta";
+    btn.textContent = "Guardar premio";
   }
 });
 
@@ -1728,7 +1761,7 @@ function loadGamesSelector() {
       const g = doc.data();
       const opt = document.createElement("option");
       opt.value = doc.id;
-      opt.textContent = `${g.plantName} (${statusLabelAdmin(g.status)})`;
+      opt.textContent = `${prizeIcon(g.prizeType)} ${g.plantName} (${statusLabelAdmin(g.status)})`;
       select.appendChild(opt);
     });
     if (prevValue) select.value = prevValue;
@@ -1742,7 +1775,7 @@ function statusLabelAdmin(status) {
 document.getElementById("createGameBtn").addEventListener("click", async () => {
   const plantId = document.getElementById("plantSelectForGame").value;
   if (!plantId) {
-    alert("Selecciona una planta primero.");
+    alert("Selecciona un premio primero.");
     return;
   }
   const plant = plantsCache[plantId];
@@ -1753,6 +1786,7 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
 
   const gameRef = await db.collection("games").add({
     plantId,
+    prizeType: plant.type || "planta",
     plantName: plant.name,
     plantDescription: plant.description || "",
     plantImageUrl: plantImages[0] || "",
@@ -1832,7 +1866,7 @@ document.getElementById("saveGameSettingsBtn").addEventListener("click", async (
 
 function renderAdminGame(gameId, g) {
   document.getElementById("gameControlTitle").textContent =
-    `Sorteo: ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
+    `Sorteo: ${prizeIcon(g.prizeType)} ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
 
   const called = g.calledNumbers || [];
   const currentNum = called.length ? called[called.length - 1] : "-";
@@ -1856,7 +1890,7 @@ function renderAdminGame(gameId, g) {
 
     const waLink = whatsappLink(
       g.winnerUserPhone,
-      `¡Hola ${g.winnerUserName}! 🌿 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu planta 🎉`
+      `¡Hola ${g.winnerUserName}! 🎉 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu premio 🎁`
     );
     const waButton = waLink
       ? `<a class="btn small" style="width:auto;background:#25D366;display:inline-block;text-decoration:none;margin-top:8px;" target="_blank" rel="noopener" href="${waLink}">📲 Enviar WhatsApp al ganador</a>`
@@ -1865,7 +1899,7 @@ function renderAdminGame(gameId, g) {
     banner.innerHTML = `
       <span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>
       <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
-        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega de la planta por WhatsApp o por el chat de abajo.
+        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega del premio por WhatsApp o por el chat de abajo.
       </p>
       ${waButton}
     `;
@@ -1876,7 +1910,7 @@ function renderAdminGame(gameId, g) {
     // Alerta instantánea al administrador la primera vez que se detecta un ganador
     if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
       lastAlertedWinnerId = g.winnerUserId;
-      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega de la planta.`);
+      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega del premio.`);
     }
   } else {
     banner.classList.add("hidden");
