@@ -1,3068 +1,1040 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bingo de Plantas 🌿</title>
-
-<style>
-:root {
-  --green-900: #1b3a2b;
-  --green-700: #2f5d3f;
-  --green-500: #4a8b5c;
-  --green-300: #8fc79f;
-  --green-100: #eaf6ed;
-  --amber-500: #d99b3f;
-  --red-500: #c0524a;
-  --gray-100: #f6f7f5;
-  --gray-300: #dfe3e0;
-  --gray-600: #6b756f;
-  --gray-900: #22261f;
-  --radius: 10px;
-  --shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--gray-100);
-  color: var(--gray-900);
-}
-
-a { color: var(--green-700); }
-
-.hidden { display: none !important; }
-
-.topbar {
-  background: var(--green-900);
-  color: white;
-  padding: 14px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.topbar h1 {
-  font-size: 1.2rem;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.topbar .user-info { font-size: 0.85rem; opacity: 0.9; margin-right: 12px; }
-.topbar button.logout {
-  background: var(--red-500);
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-.card-panel {
-  background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-h2 { color: var(--green-900); margin-top: 0; }
-h3 { color: var(--green-700); }
-
-.auth-wrapper {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--green-900), var(--green-500));
-}
-.auth-box {
-  background: white;
-  padding: 32px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  width: 360px;
-  max-width: 90vw;
-}
-.auth-box h1 {
-  color: var(--green-900);
-  text-align: center;
-  margin-bottom: 4px;
-}
-.auth-box p.subtitle {
-  text-align: center;
-  color: var(--gray-600);
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: inherit;
-}
-
-button { cursor: pointer; font-family: inherit; }
-
-.btn {
-  background: var(--green-700);
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  width: 100%;
-}
-.btn:hover { background: var(--green-900); }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn.secondary { background: var(--gray-600); }
-.btn.amber { background: var(--amber-500); }
-.btn.red { background: var(--red-500); }
-.btn.small { width: auto; padding: 6px 12px; font-size: 0.85rem; }
-
-.tab-toggle {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 0.85rem;
-}
-.tab-toggle span { cursor: pointer; color: var(--green-700); text-decoration: underline; }
-
-.error-msg { color: var(--red-500); font-size: 0.85rem; margin-bottom: 10px; min-height: 1em; }
-.success-msg { color: var(--green-700); font-size: 0.85rem; margin-bottom: 10px; }
-
-/* ---------- Bingo grid ---------- */
-.bingo-card {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  max-width: 420px;
-  margin: 0 auto;
-}
-.bingo-header {
-  text-align: center;
-  font-weight: bold;
-  color: white;
-  background: var(--green-700);
-  border-radius: 6px;
-  padding: 8px 0;
-}
-.bingo-cell {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--gray-300);
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  background: white;
-  transition: all 0.2s;
-}
-.bingo-cell.marked { background: var(--green-500); color: white; border-color: var(--green-700); }
-.bingo-cell.free { background: var(--amber-500); color: white; font-size: 0.75rem; }
-.bingo-cell.current-call {
-  border-color: var(--amber-500);
-  box-shadow: 0 0 0 3px rgba(217,155,63,0.55);
-  animation: currentCallPulse 1.4s ease-in-out infinite;
-}
-@keyframes currentCallPulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(217,155,63,0.55); }
-  50%      { box-shadow: 0 0 0 7px rgba(217,155,63,0.9); }
-}
-
-/* ---------- Called number display ---------- */
-.current-number-display { text-align: center; padding: 20px; }
-.current-number-display .big-number {
-  font-size: 4rem;
-  font-weight: bold;
-  color: var(--green-900);
-  background: var(--green-100);
-  display: inline-block;
-  padding: 10px 30px;
-  border-radius: 16px;
-  border: 3px solid var(--green-500);
-}
-.called-history { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; justify-content: center; }
-.called-chip {
-  background: var(--green-300);
-  color: var(--green-900);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-/* ---------- Plant list / gallery ---------- */
-.plant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-.plant-item { border: 1px solid var(--gray-300); border-radius: var(--radius); overflow: hidden; background: white; }
-.plant-item img { width: 100%; height: 130px; object-fit: cover; background: var(--gray-300); }
-.plant-item .plant-body { padding: 10px; }
-.plant-item h4 { margin: 0 0 4px 0; font-size: 1rem; color: var(--green-900); }
-.plant-item p { margin: 0; font-size: 0.8rem; color: var(--gray-600); }
-.status-badge { display: inline-block; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; margin-top: 6px; font-weight: bold; }
-.status-open { background: var(--green-100); color: var(--green-700); }
-.status-running { background: #fff3d6; color: var(--amber-500); }
-.status-finished { background: #f3d6d6; color: var(--red-500); }
-
-/* ---------- Tables ---------- */
-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-th, td { padding: 8px 10px; border-bottom: 1px solid var(--gray-300); text-align: left; }
-th { background: var(--green-100); color: var(--green-900); }
-
-/* ---------- Chat ---------- */
-.chat-box {
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  height: 300px;
-  overflow-y: auto;
-  padding: 10px;
-  background: var(--gray-100);
-  margin-bottom: 10px;
-}
-.chat-msg { margin-bottom: 8px; padding: 8px 12px; border-radius: 12px; max-width: 75%; font-size: 0.9rem; }
-.chat-msg.mine { background: var(--green-500); color: white; margin-left: auto; }
-.chat-msg.theirs { background: white; border: 1px solid var(--gray-300); }
-.chat-input-row { display: flex; gap: 8px; }
-.chat-input-row input { margin-bottom: 0; }
-.chat-input-row button { width: auto; padding: 10px 16px; }
-
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
-
-.badge-winner { background: var(--amber-500); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
-.empty-state { text-align: center; color: var(--gray-600); padding: 30px; font-size: 0.9rem; }
-
-/* ---------- Galería de fotos de la planta ---------- */
-.gallery-thumbs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.gallery-thumb {
-  width: 64px; height: 64px; object-fit: cover; border-radius: 8px;
-  border: 2px solid var(--gray-300); cursor: pointer; transition: border-color 0.2s, transform 0.2s;
-}
-.gallery-thumb:hover { border-color: var(--green-500); transform: scale(1.05); }
-.gallery-thumb.active { border-color: var(--green-600); box-shadow: 0 0 0 2px var(--green-500); }
-.plant-item .mini-thumbs { display: flex; gap: 4px; padding: 0 10px 10px; }
-.plant-item .mini-thumbs img { width: 32px; height: 32px; object-fit: cover; border-radius: 6px; border: 1px solid var(--gray-300); }
-
-/* ---------- Caja de información de pago (SINPE) ---------- */
-.payment-info-box {
-  background: var(--green-100);
-  border: 1px dashed var(--green-500);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  font-size: 0.92rem;
-}
-.payment-info-box p { margin: 4px 0; }
-.payment-info-box strong { color: var(--green-900); }
-
-/* ---------- Patrón ganador ---------- */
-.pattern-tag {
-  display: inline-block;
-  background: var(--green-700);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin: 6px 0 12px 0;
-}
-
-/* ---------- Alerta de nuevo ganador (admin) ---------- */
-@keyframes winnerPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(217,155,63,0.6); }
-  70%  { box-shadow: 0 0 0 14px rgba(217,155,63,0); }
-  100% { box-shadow: 0 0 0 0 rgba(217,155,63,0); }
-}
-.winner-alert-flash {
-  animation: winnerPulse 1.4s infinite;
-  background: #fff3d6 !important;
-  border: 2px solid var(--amber-500);
-  border-radius: var(--radius);
-  padding: 14px !important;
-}
-
-.game-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 700px) { .game-settings-grid { grid-template-columns: 1fr; } }
-
-/* ---------- Vista previa de fotos subidas (input file) ---------- */
-.upload-preview {
-  width: 90px; height: 90px; object-fit: cover; border-radius: 8px;
-  border: 2px solid var(--gray-300); margin: 4px 0 12px 0; display: block;
-}
-.upload-field label { font-size: 0.8rem; color: var(--gray-600); display: block; margin-bottom: 4px; }
-.upload-field { margin-bottom: 8px; }
-
-/* ---------- Miniatura de comprobante en tabla admin ---------- */
-.proof-thumb {
-  width: 44px; height: 44px; object-fit: cover; border-radius: 6px;
-  border: 1px solid var(--gray-300); cursor: pointer;
-}
-
-/* ---------- Lightbox (ver comprobante en grande) ---------- */
-.lightbox-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-  display: flex; align-items: center; justify-content: center; z-index: 999;
-}
-.lightbox-overlay img { max-width: 90vw; max-height: 85vh; border-radius: 8px; }
-.lightbox-close {
-  position: absolute; top: 20px; right: 20px; width: auto;
-}
-
-/* ---------- Badge de notificaciones ---------- */
-.notif-badge {
-  background: var(--red-500); color: white; border-radius: 12px;
-  padding: 2px 9px; font-size: 0.75rem; font-weight: bold; margin-left: 8px;
-}
-.notif-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 10px 4px; border-bottom: 1px solid var(--gray-300); gap: 10px;
-}
-.notif-item:last-child { border-bottom: none; }
-
-/* ---------- Videos flotantes (miniaturas que llevan a la tienda) ---------- */
-.floating-promos {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  z-index: 900;
-}
-.floating-promo {
-  position: relative;
-  display: block;
-  width: 110px;
-  height: 195px; /* Proporción vertical para historia */
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  border: 3px solid white;
-  background: #000;
-  cursor: pointer;
-}
-.floating-promo .promo-media { width: 100%; height: 100%; }
-.floating-promo .promo-media video,
-.floating-promo .promo-media iframe {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border: none;
-  pointer-events: none;
-}
-.floating-promo .promo-badge {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.55);
-  color: white;
-  font-size: 0.65rem;
-  text-align: center;
-  padding: 3px 0;
-}
-.floating-promo .promo-close {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--red-500);
-  color: white;
-  border: 2px solid white;
-  font-size: 0.75rem;
-  line-height: 18px;
-  text-align: center;
-}
-@media (max-width: 480px) {
-  .floating-promo { width: 84px; height: 148px; }
-}
-
-/* ---------- Imagen del premio dentro del chat ---------- */
-.chat-prize-img {
-  display: block;
-  max-width: 220px;
-  max-height: 160px;
-  object-fit: cover;
-  border-radius: var(--radius);
-  margin-bottom: 12px;
-}
-
-/* ---------- Muro social ---------- */
-.social-wall {
-  margin-top: 20px;
-}
-.post-card {
-  background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 15px;
-  margin-bottom: 15px;
-}
-.post-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.post-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--green-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  margin-right: 10px;
-}
-.post-info {
-  flex: 1;
-}
-.post-name {
-  font-weight: bold;
-  color: var(--green-900);
-}
-.post-date {
-  font-size: 0.8rem;
-  color: var(--gray-600);
-}
-.post-content {
-  margin-bottom: 10px;
-}
-.post-image {
-  max-width: 100%;
-  border-radius: var(--radius);
-  margin-top: 10px;
-}
-
-/* ---------- Modal para posts ---------- */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-content {
-  background: white;
-  border-radius: var(--radius);
-  padding: 20px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.modal-title {
-  margin: 0;
-  color: var(--green-900);
-}
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--gray-600);
-}
-
-/* ---------- Indicador de números marcados ---------- */
-.marked-count {
-  background: var(--green-500);
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: bold;
-  margin-left: 8px;
-}
-</style>
-</head>
-<body>
-
-<!-- ============================================================ -->
-<!-- VISTA: AUTENTICACIÓN (login / registro)                       -->
-<!-- ============================================================ -->
-<div id="authView">
-  <div class="auth-wrapper">
-    <div class="auth-box">
-      <h1>🌿 Bingo de Plantas</h1>
-      <p class="subtitle" id="formSubtitle">Inicia sesión para participar</p>
-
-      <div class="error-msg" id="errorMsg"></div>
-      <div class="success-msg" id="successMsg"></div>
-
-      <form id="loginForm">
-        <input type="email" id="loginEmail" placeholder="Correo electrónico" required>
-        <input type="password" id="loginPassword" placeholder="Contraseña" required>
-        <button class="btn" type="submit">Ingresar</button>
-      </form>
-
-      <form id="registerForm" class="hidden">
-        <input type="text" id="registerName" placeholder="Nombre completo" required>
-        <input type="email" id="registerEmail" placeholder="Correo electrónico" required>
-        <input type="tel" id="registerPhone" placeholder="Número de WhatsApp (ej: 8888-7777)" required>
-        <input type="password" id="registerPassword" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
-        <button class="btn" type="submit">Crear cuenta</button>
-      </form>
-
-      <div class="tab-toggle">
-        <span id="showRegister">Crear cuenta nueva</span>
-        <span id="showLogin" class="hidden">Ya tengo cuenta</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- VISTA: DASHBOARD DE USUARIO                                   -->
-<!-- ============================================================ -->
-<div id="userView" class="hidden">
-  <div class="topbar">
-    <h1>🌿 Bingo de Plantas</h1>
-    <div>
-      <span class="user-info" id="userInfoUser"></span>
-      <button class="logout" id="logoutBtnUser">Salir</button>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <div id="floatingPromos" class="floating-promos">
-      <a class="floating-promo hidden" id="promo1Bubble" target="_blank" rel="noopener">
-        <div class="promo-media" id="promo1Media"></div>
-        <span class="promo-badge">🛍️ Tienda</span>
-        <span class="promo-close" data-close-promo="1">✕</span>
-      </a>
-      <a class="floating-promo hidden" id="promo2Bubble" target="_blank" rel="noopener">
-        <div class="promo-media" id="promo2Media"></div>
-        <span class="promo-badge">🛍️ Tienda</span>
-        <span class="promo-close" data-close-promo="2">✕</span>
-      </a>
-      <a class="floating-promo hidden" id="promo3Bubble" target="_blank" rel="noopener">
-        <div class="promo-media" id="promo3Media"></div>
-        <span class="promo-badge">🛍️ Tienda</span>
-        <span class="promo-close" data-close-promo="3">✕</span>
-      </a>
-    </div>
-
-    <div class="card-panel" id="userNotificationsPanel">
-      <h2>🔔 Notificaciones <span class="notif-badge hidden" id="userNotifBadge">0</span></h2>
-      <div id="userNotificationsList"><p class="empty-state">No hay notificaciones nuevas.</p></div>
-    </div>
-
-    <div class="card-panel" id="gameSelectorPanel">
-      <h2>Sorteos disponibles</h2>
-      <div id="gamesList" class="plant-grid"></div>
-    </div>
-
-    <div id="activeGamePanel" class="hidden">
-
-      <div class="card-panel">
-        <h2 id="activePlantTitle">🌱 Planta en juego</h2>
-        <span class="pattern-tag" id="gameWinPatternLabel">Cartón lleno</span>
-        <div class="grid-2">
-          <div>
-            <img id="activePlantImg" src="" alt="premio" style="width:100%;border-radius:10px;max-height:340px;object-fit:contain;background:var(--gray-100);display:block;">
-            <div class="gallery-thumbs" id="activePlantThumbs"></div>
-            <p id="activePlantDesc" style="color:var(--gray-600);"></p>
-            
-            <!-- Información adicional del sorteo -->
-            <div id="gameInfo" style="margin-top: 15px; padding: 10px; background: var(--green-100); border-radius: 8px;">
-              <p><strong>Fecha y hora:</strong> <span id="gameDateTime"></span></p>
-              <p><strong>Cartones disponibles:</strong> <span id="cardsAvailable"></span></p>
-              <p><strong>Mínimo de cartones:</strong> <span id="minCards"></span></p>
-              <p><strong>Ganador:</strong> <span id="winnerName"></span></p>
-            </div>
-          </div>
-          <div class="current-number-display">
-            <p style="margin:0 0 8px 0;color:var(--gray-600);">Número cayendo:</p>
-            <div class="big-number" id="currentNumberBig">-</div>
-            <div class="called-history" id="calledHistory"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-panel hidden winner-alert-flash" id="gameWinnerBanner"></div>
-
-      <div class="card-panel" id="myCardsPanel">
-        <h3>🎫 Tus cartones en este sorteo</h3>
-        <div id="myCardsList"></div>
-        <button class="btn" id="requestCardBtn">Comprar otro cartón</button>
-        <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 5px;">
-          Máximo 3 cartones por sorteo
-        </p>
-      </div>
-
-    </div>
-
-    <div class="card-panel hidden" id="chatPanel">
-      <h3>💬 Chat con el administrador — ¡Ganaste este premio!</h3>
-      <img id="chatPrizeImg" class="chat-prize-img hidden" alt="Premio ganado">
-      <div class="chat-box" id="chatBox"></div>
-      <div class="chat-input-row">
-        <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
-        <button class="btn small" id="sendChatBtn">Enviar</button>
-      </div>
-    </div>
-
-    <!-- Muro social -->
-    <div class="card-panel">
-      <h2>📢 Muro de la Comunidad</h2>
-      <button class="btn small" id="createPostBtn" style="margin-bottom: 15px;">📝 Crear publicación</button>
-      <div id="socialWall" class="social-wall"></div>
-    </div>
-
-    <div class="card-panel" id="userPasswordPanel">
-      <h3>🔒 Cambiar contraseña</h3>
-      <input type="password" id="userCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
-      <input type="password" id="userNewPassword" placeholder="Contraseña nueva (mín. 6 caracteres)" autocomplete="new-password" minlength="6">
-      <input type="password" id="userConfirmPassword" placeholder="Confirmar contraseña nueva" autocomplete="new-password" minlength="6">
-      <button class="btn small" id="userChangePasswordBtn" style="width:auto;">Actualizar contraseña</button>
-      <p id="userPasswordStatus" style="font-size:0.8rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
-    </div>
-
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- VISTA: PANEL DE ADMINISTRADOR                                 -->
-<!-- ============================================================ -->
-<div id="adminView" class="hidden">
-  <div class="topbar">
-    <h1>🌿 Bingo de Plantas — Admin</h1>
-    <div>
-      <span class="user-info" id="userInfoAdmin"></span>
-      <button class="logout" id="logoutBtnAdmin">Salir</button>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <div class="card-panel" id="notificationsPanel">
-      <h2>🔔 Notificaciones <span class="notif-badge hidden" id="notifBadge">0</span></h2>
-      <div id="notificationsList"><p class="empty-state">No hay notificaciones pendientes.</p></div>
-    </div>
-
-    <div class="card-panel" id="adPanel">
-      <h2>📢 Videos flotantes para jugadores</h2>
-      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0;">
-        Cada video aparece como una miniatura flotante sobre la pantalla de los jugadores. Al tocarla, se abre el enlace de la tienda en una pestaña nueva. Funciona mejor con enlaces de YouTube o un archivo de video directo (.mp4). Enlaces de TikTok/Instagram/Facebook no se pueden mostrar en miniatura por restricciones de esas plataformas — usa YouTube o sube el video como .mp4 a un enlace directo.
-      </p>
-
-      <div class="grid-2">
-        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
-          <h3 style="margin-top:0;">Video 1</h3>
-          <input type="url" id="promo1VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
-          <input type="url" id="promo1StoreUrl" placeholder="Enlace de la tienda">
-          <button class="btn small red" id="removePromo1Btn" style="width:auto;">Quitar video 1</button>
-        </div>
-        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
-          <h3 style="margin-top:0;">Video 2</h3>
-          <input type="url" id="promo2VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
-          <input type="url" id="promo2StoreUrl" placeholder="Enlace de la tienda">
-          <button class="btn small red" id="removePromo2Btn" style="width:auto;">Quitar video 2</button>
-        </div>
-        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
-          <h3 style="margin-top:0;">Video 3</h3>
-          <input type="url" id="promo3VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
-          <input type="url" id="promo3StoreUrl" placeholder="Enlace de la tienda">
-          <button class="btn small red" id="removePromo3Btn" style="width:auto;">Quitar video 3</button>
-        </div>
-      </div>
-
-      <button class="btn small" id="saveAdBtn" style="width:auto;">Guardar videos</button>
-      <p id="adStatus" style="font-size:0.8rem;color:var(--gray-600);margin:6px 0 0 0;"></p>
-    </div>
-
-    <div class="card-panel">
-      <h2>🎁 Base de premios a sortear</h2>
-      <p style="color:var(--gray-600);font-size:0.9rem;">Registra plantas y kits (jardín, plantas, fertilizante). Cada uno podrá usarse para crear un sorteo.</p>
-
-      <div id="plantForm">
-        <input type="hidden" id="plantEditId">
-        <select id="plantType">
-          <option value="planta">🌱 Planta</option>
-          <option value="kit_jardin">🧰 Kit de jardín</option>
-          <option value="kit_plantas">🪴 Kit de plantas</option>
-          <option value="kit_fertilizante">🌾 Kit de fertilizante</option>
-        </select>
-        <input type="text" id="plantName" placeholder="Nombre del premio (ej: Monstera Deliciosa, Kit de jardín básico)">
-        <textarea id="plantDesc" placeholder="Descripción del juego / del premio (ej: reglas, detalles del premio)" rows="2"></textarea>
-
-        <div class="upload-field">
-          <label>Foto 1</label>
-          <input type="file" id="plantImageFile1" accept="image/*">
-          <img id="plantImagePreview1" class="upload-preview hidden" alt="vista previa foto 1">
-        </div>
-        <div class="upload-field">
-          <label>Foto 2 (opcional)</label>
-          <input type="file" id="plantImageFile2" accept="image/*">
-          <img id="plantImagePreview2" class="upload-preview hidden" alt="vista previa foto 2">
-        </div>
-        <div class="upload-field">
-          <label>Foto 3 (opcional)</label>
-          <input type="file" id="plantImageFile3" accept="image/*">
-          <img id="plantImagePreview3" class="upload-preview hidden" alt="vista previa foto 3">
-        </div>
-
-        <button class="btn" id="savePlantBtn">Guardar premio</button>
-        <button class="btn secondary hidden" id="cancelEditBtn">Cancelar edición</button>
-      </div>
-
-      <div class="plant-grid" id="plantsList" style="margin-top:20px;"></div>
-    </div>
-
-    <div class="card-panel">
-      <h2>🎯 Sorteos</h2>
-      <div class="grid-2">
-        <div>
-          <select id="plantSelectForGame"></select>
-          <input type="text" id="newGameSinpe" placeholder="Número SINPE Móvil para este sorteo">
-          <input type="number" id="newGamePrice" placeholder="Precio por cartón (₡)" value="1000">
-          <input type="datetime-local" id="newGameDateTime" placeholder="Fecha y hora del sorteo">
-          <input type="number" id="newGameMinCards" placeholder="Mínimo de cartones" value="5">
-          <select id="newGamePattern">
-            <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
-            <option value="fourCorners">Patrón ganador: Cuatro esquinas</option>
-            <option value="cross">Patrón ganador: Forma de cruz</option>
-            <option value="x">Patrón ganador: Forma de X</option>
-          </select>
-          <button class="btn" id="createGameBtn">Crear nuevo sorteo con este premio</button>
-        </div>
-        <div>
-          <select id="gameSelector"></select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card-panel" id="winnersHistoryPanel">
-      <h2>🏆 Historial de ganadores</h2>
-      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0;">Contacta al ganador de cualquier sorteo finalizado directamente por WhatsApp.</p>
-      <div id="winnersHistoryList"><p class="empty-state">Aún no hay sorteos finalizados con ganador.</p></div>
-    </div>
-
-    <div class="card-panel hidden" id="gameControlPanel">
-      <h2 id="gameControlTitle">Sorteo</h2>
-
-      <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
-        <h3 style="margin-top:0;">⚙️ Configuración de pago y patrón ganador</h3>
-        <div class="game-settings-grid">
-          <input type="text" id="editSinpe" placeholder="Número SINPE Móvil">
-          <input type="number" id="editPrice" placeholder="Precio por cartón (₡)">
-          <input type="datetime-local" id="editDateTime" placeholder="Fecha y hora del sorteo">
-          <input type="number" id="editMinCards" placeholder="Mínimo de cartones">
-        </div>
-        <select id="editPattern">
-          <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
-          <option value="fourCorners">Patrón ganador: Cuatro esquinas</option>
-          <option value="cross">Patrón ganador: Forma de cruz</option>
-          <option value="x">Patrón ganador: Forma de X</option>
-        </select>
-        <button class="btn small" id="saveGameSettingsBtn">Guardar configuración</button>
-        <p id="gameSettingsStatus" style="font-size:0.8rem;color:var(--gray-600);margin:6px 0 0 0;"></p>
-      </div>
-
-      <div class="current-number-display">
-        <div class="big-number" id="adminCurrentNumber">-</div>
-        <div class="called-history" id="adminCalledHistory"></div>
-      </div>
-
-      <div style="text-align:center;margin-bottom:16px;">
-        <button class="btn amber" id="callNumberBtn" style="width:auto;padding:12px 30px;">🎲 Cantar siguiente número</button>
-        <button class="btn red" id="resetGameBtn" style="width:auto;">Reiniciar sorteo</button>
-        <button class="btn red" id="deleteGameBtn" style="width:auto;">🗑️ Eliminar sorteo</button>
-      </div>
-
-      <h3>Participantes</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Pago</th>
-            <th>Comprobante</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="participantsTable"></tbody>
-      </table>
-
-      <div class="hidden" id="winnerBanner" style="margin-top:16px;"></div>
-    </div>
-
-    <div class="card-panel hidden" id="adminChatPanel">
-      <h3>💬 Chat con el ganador</h3>
-      <img id="adminChatPrizeImg" class="chat-prize-img hidden" alt="Premio ganado">
-      <button class="btn small amber" id="sendCongratsBtn" style="width:auto;margin-bottom:10px;">🎉 Preparar mensaje de felicitación</button>
-      <div class="chat-box" id="adminChatBox"></div>
-      <div class="chat-input-row">
-        <input type="text" id="adminChatInput" placeholder="Escribe un mensaje...">
-        <button class="btn small" id="adminSendChatBtn">Enviar</button>
-      </div>
-    </div>
-
-    <!-- Muro social admin -->
-    <div class="card-panel">
-      <h2>📢 Publicar ganadores del día</h2>
-      <button class="btn small" id="createAdminPostBtn" style="margin-bottom: 15px;">📝 Publicar ganador</button>
-      <div id="adminSocialWall" class="social-wall"></div>
-    </div>
-
-    <div class="card-panel" id="adminPasswordPanel">
-      <h3>🔒 Cambiar contraseña</h3>
-      <input type="password" id="adminCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
-      <input type="password" id="adminNewPassword" placeholder="Contraseña nueva (mín. 6 caracteres)" autocomplete="new-password" minlength="6">
-      <input type="password" id="adminConfirmPassword" placeholder="Confirmar contraseña nueva" autocomplete="new-password" minlength="6">
-      <button class="btn small" id="adminChangePasswordBtn" style="width:auto;">Actualizar contraseña</button>
-      <p id="adminPasswordStatus" style="font-size:0.8rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
-    </div>
-
-  </div>
-</div>
-
-<!-- Modal para crear posts -->
-<div id="postModal" class="modal-overlay hidden">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 class="modal-title" id="modalTitle">Crear publicación</h3>
-      <button class="modal-close" id="closeModal">&times;</button>
-    </div>
-    <form id="postForm">
-      <textarea id="postContent" placeholder="Escribe tu publicación..." rows="4" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--gray-300); border-radius: 8px;"></textarea>
-      <input type="file" id="postImage" accept="image/*" style="margin-bottom: 10px;">
-      <img id="postImagePreview" class="upload-preview hidden" alt="Vista previa">
-      <button type="submit" class="btn small">Publicar</button>
-    </form>
-  </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- FIREBASE SDK (compat, vía CDN — sin build tools)               -->
-<!-- ============================================================ -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
-// ============================================================
-// CONFIGURACIÓN DE FIREBASE
-// ============================================================
-// 1. Ve a https://console.firebase.google.com
-// 2. Crea un proyecto nuevo (gratis, plan Spark es suficiente)
-// 3. Activa: Authentication (Email/Password) y Firestore Database
-//    (Storage NO es necesario: las imágenes y comprobantes se guardan como enlaces URL)
-// 4. Ve a "Configuración del proyecto" > "Tus apps" > "Web" y copia tu config aquí:
-// ============================================================
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCFNrGlT6IcBeIm3Dy2nKybswHHiwgfWKU",
-  authDomain: "bingo-2179a.firebaseapp.com",
-  projectId: "bingo-2179a",
-  storageBucket: "bingo-2179a.firebasestorage.app",
-  messagingSenderId: "610298172226",
-  appId: "1:610298172226:web:a1b57f0a12a96b48c66edb",
-  measurementId: "G-DP0KCPY6V4"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-// Nota: este proyecto NO usa Firebase Storage. Las imágenes de plantas y los
-// comprobantes de pago se manejan como enlaces (URL) guardados directamente en Firestore.
-
-db.enablePersistence().catch((err) => {
-  console.warn("Persistencia offline no disponible:", err.code);
-});
-
-// Email(s) del/los administradores iniciales.
-// El primer usuario que se registre con uno de estos correos será admin automáticamente.
-const ADMIN_EMAILS = [
-  "tubingoplant@canaan.com"
-];
-</script>
-
-<script>
-// ============================================================
-// UTILIDADES DEL CARTÓN DE BINGO (75 bolas, columnas B-I-N-G-O)
-// ============================================================
-
-// Firestore no permite arrays anidados (array dentro de array).
-// Estas funciones convierten la matriz 5x5 a un array plano de 25
-// elementos para guardarla, y lo reconstruyen a 5x5 al leerla.
-function flattenGrid(grid) {
-  const flat = [];
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      flat.push(grid[row][col]);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bingo de Plantas 🌿</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-dark: #1b5e20;
+      --secondary: #ff9800;
+      --accent: #4caf50;
+      --light: #f1f8e9;
+      --dark: #1b5e20;
+      --gray: #757575;
+      --light-gray: #e0e0e0;
+      --white: #ffffff;
+      --shadow: 0 4px 12px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --transition: all 0.3s ease;
     }
-  }
-  return flat;
-}
 
-function unflattenGrid(flat) {
-  const grid = [];
-  for (let row = 0; row < 5; row++) {
-    grid.push(flat.slice(row * 5, row * 5 + 5));
-  }
-  return grid;
-}
-
-function generateBingoCard() {
-  const ranges = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75]];
-  const numbers = [[], [], [], [], []];
-  const marked = [[], [], [], [], []];
-
-  for (let col = 0; col < 5; col++) {
-    const [min, max] = ranges[col];
-    const pool = [];
-    for (let n = min; n <= max; n++) pool.push(n);
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    for (let row = 0; row < 5; row++) {
-      numbers[row][col] = pool[row];
-      marked[row][col] = false;
+
+    body {
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+      color: #333;
+      line-height: 1.6;
     }
-  }
 
-  numbers[2][2] = "FREE";
-  marked[2][2] = true;
-
-  return { numbers, marked };
-}
-
-function recalculateMarks(numbers, calledNumbers) {
-  const calledSet = new Set(calledNumbers);
-  const marked = [[], [], [], [], []];
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      const val = numbers[row][col];
-      marked[row][col] = val === "FREE" || calledSet.has(val);
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
     }
-  }
-  return marked;
-}
 
-function isCardComplete(marked) {
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      if (!marked[row][col]) return false;
+    /* Header Styles */
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 0;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-  }
-  return true;
-}
 
-// ============================================================
-// PATRONES GANADORES CONFIGURABLES POR SORTEO
-// ============================================================
-const PATTERN_LABELS = {
-  fullCard: "Cartón lleno (todos los números)",
-  fourCorners: "Cuatro esquinas",
-  cross: "Forma de cruz",
-  x: "Forma de X"
-};
-
-function patternLabel(pattern) {
-  return PATTERN_LABELS[pattern] || PATTERN_LABELS.fullCard;
-}
-
-function checkPattern(marked, pattern) {
-  switch (pattern) {
-    case "fourCorners":
-      return !!(marked[0][0] && marked[0][4] && marked[4][0] && marked[4][4]);
-    case "cross": {
-      for (let i = 0; i < 5; i++) {
-        if (!marked[2][i] || !marked[i][2]) return false;
-      }
-      return true;
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
     }
-    case "x": {
-      for (let i = 0; i < 5; i++) {
-        if (!marked[i][i] || !marked[i][4 - i]) return false;
-      }
-      return true;
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.5rem;
+      font-weight: 700;
     }
-    case "fullCard":
-    default:
-      return isCardComplete(marked);
-  }
-}
 
-const BINGO_LETTERS = ["B", "I", "N", "G", "O"];
-
-// ============================================================
-// TIPOS DE PREMIO (plantas y otros kits para sortear)
-// ============================================================
-const PRIZE_TYPES = {
-  planta:           { label: "Planta",             icon: "🌱" },
-  kit_jardin:       { label: "Kit de jardín",       icon: "🧰" },
-  kit_plantas:      { label: "Kit de plantas",      icon: "🪴" },
-  kit_fertilizante: { label: "Kit de fertilizante", icon: "🌾" }
-};
-
-function prizeIcon(type) {
-  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).icon;
-}
-
-function prizeTypeLabel(type) {
-  return (PRIZE_TYPES[type] || PRIZE_TYPES.planta).label;
-}
-
-function letterForNumber(n) {
-  if (n <= 15) return "B";
-  if (n <= 30) return "I";
-  if (n <= 45) return "N";
-  if (n <= 60) return "G";
-  return "O";
-}
-
-// Construye un enlace de "click-to-chat" de WhatsApp con un mensaje pre-escrito.
-// El administrador puede editar el mensaje dentro de WhatsApp antes de enviarlo.
-function whatsappLink(phone, message) {
-  if (!phone) return null;
-  const digits = String(phone).replace(/[^\d]/g, "");
-  if (!digits) return null;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-}
-
-// ============================================================
-// SUBIDA DE IMÁGENES REALES (fotos de plantas / comprobantes)
-// ============================================================
-// Este proyecto no usa Firebase Storage, así que las fotos se
-// comprimen en el navegador y se guardan como imagen embebida
-// (data URL) directamente en el documento de Firestore. Por eso
-// se reduce el tamaño/calidad: cada documento de Firestore tiene
-// un límite de 1MB, así que estas fotos deben quedar livianas.
-function fileToCompressedDataUrl(file, maxDim = 900, quality = 0.7) {
-  return new Promise((resolve, reject) => {
-    if (!file) { reject(new Error("No se seleccionó ningún archivo.")); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round(height * (maxDim / width));
-            width = maxDim;
-          } else {
-            width = Math.round(width * (maxDim / height));
-            height = maxDim;
-          }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.onerror = () => reject(new Error("No se pudo leer la imagen seleccionada."));
-      img.src = e.target.result;
-    };
-    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
-    reader.readAsDataURL(file);
-  });
-}
-
-// ---------- Lightbox: ver comprobantes de pago en grande ----------
-const lightboxOverlay = document.getElementById("lightboxOverlay");
-const lightboxImg = document.getElementById("lightboxImg");
-function openLightbox(src) {
-  if (!src) return;
-  lightboxImg.src = src;
-  lightboxOverlay.classList.remove("hidden");
-}
-document.getElementById("lightboxCloseBtn").addEventListener("click", () => {
-  lightboxOverlay.classList.add("hidden");
-  lightboxImg.src = "";
-});
-lightboxOverlay.addEventListener("click", (e) => {
-  if (e.target === lightboxOverlay) {
-    lightboxOverlay.classList.add("hidden");
-    lightboxImg.src = "";
-  }
-});
-
-// ---------- Funciones auxiliares ----------
-function formatDateTime(date) {
-  if (!date) return "No especificada";
-  const options = { 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit',
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: true
-  };
-  return new Date(date).toLocaleString('es-ES', options);
-}
-
-function getCurrentDateTimeLocal() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-</script>
-
-<script>
-// ============================================================
-// ROUTER: muestra la vista correcta según sesión y rol
-// ============================================================
-
-const authView = document.getElementById("authView");
-const userView = document.getElementById("userView");
-const adminView = document.getElementById("adminView");
-
-function showView(view) {
-  authView.classList.add("hidden");
-  userView.classList.add("hidden");
-  adminView.classList.add("hidden");
-  view.classList.remove("hidden");
-}
-
-let currentUser = null;
-let currentUserData = null;
-
-auth.onAuthStateChanged(async (user) => {
-  cleanupAllListeners();
-
-  if (!user) {
-    currentUser = null;
-    currentUserData = null;
-    showView(authView);
-    return;
-  }
-
-  currentUser = user;
-  const docRef = db.collection("users").doc(user.uid);
-  let doc = await docRef.get();
-
-  if (!doc.exists) {
-    // Caso de recuperación: el usuario existe en Firebase Authentication pero
-    // por alguna razón (ej. reglas de Firestore no publicadas en el momento del
-    // registro) nunca se creó su documento en Firestore. Lo creamos ahora mismo
-    // en vez de cerrarle la sesión, para no dejarlo bloqueado fuera de la app.
-    const email = (user.email || "").toLowerCase();
-    const role = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email) ? "admin" : "user";
-    const name = user.displayName || email.split("@")[0];
-    try {
-      await docRef.set({
-        name,
-        email: user.email,
-        role,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      doc = await docRef.get();
-    } catch (err) {
-      console.error("No se pudo crear el documento de usuario:", err);
-      showView(authView);
-      errorMsg.textContent = "No se pudo completar tu perfil. Verifica que las reglas de Firestore estén publicadas e intenta de nuevo.";
-      return;
+    .logo i {
+      color: var(--secondary);
     }
-  }
 
-  currentUserData = doc.data();
-
-  if (currentUserData.role === "admin") {
-    document.getElementById("userInfoAdmin").textContent = `${currentUserData.name} (Administrador)`;
-    showView(adminView);
-    initAdminView();
-  } else {
-    document.getElementById("userInfoUser").textContent = `${currentUserData.name} (${currentUserData.email})`;
-    showView(userView);
-    initUserView();
-  }
-});
-
-function cleanupAllListeners() {
-  if (typeof gameUnsub === "function") gameUnsub();
-  if (typeof cardUnsub === "function") cardUnsub();
-  if (typeof chatUnsub === "function") chatUnsub();
-  if (typeof gamesListUnsub === "function") gamesListUnsub();
-  if (typeof userNotificationsUnsub === "function") userNotificationsUnsub();
-  if (typeof adminGameUnsub === "function") adminGameUnsub();
-  if (typeof adminCardsUnsub === "function") adminCardsUnsub();
-  if (typeof adminChatUnsub === "function") adminChatUnsub();
-  if (typeof plantsUnsub === "function") plantsUnsub();
-  if (typeof gamesSelectorUnsub === "function") gamesSelectorUnsub();
-  if (typeof notificationsUnsub === "function") notificationsUnsub();
-  if (typeof adBannerUnsub === "function") adBannerUnsub();
-  if (typeof adAdminUnsub === "function") adAdminUnsub();
-  if (typeof winnersHistoryUnsub === "function") winnersHistoryUnsub();
-  if (typeof socialWallUnsub === "function") socialWallUnsub();
-  if (typeof adminSocialWallUnsub === "function") adminSocialWallUnsub();
-}
-
-document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
-document.getElementById("logoutBtnAdmin").addEventListener("click", () => auth.signOut());
-</script>
-
-<script>
-// ============================================================
-// AUTENTICACIÓN (login / registro)
-// ============================================================
-
-const errorMsg = document.getElementById("errorMsg");
-const successMsg = document.getElementById("successMsg");
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const showRegister = document.getElementById("showRegister");
-const showLogin = document.getElementById("showLogin");
-const formSubtitle = document.getElementById("formSubtitle");
-
-function clearMsgs() {
-  errorMsg.textContent = "";
-  successMsg.textContent = "";
-}
-
-showRegister.addEventListener("click", () => {
-  loginForm.classList.add("hidden");
-  registerForm.classList.remove("hidden");
-  showRegister.classList.add("hidden");
-  showLogin.classList.remove("hidden");
-  formSubtitle.textContent = "Crea tu cuenta para participar";
-  clearMsgs();
-});
-
-showLogin.addEventListener("click", () => {
-  loginForm.classList.remove("hidden");
-  registerForm.classList.add("hidden");
-  showLogin.classList.add("hidden");
-  showRegister.classList.remove("hidden");
-  formSubtitle.textContent = "Inicia sesión para participar";
-  clearMsgs();
-});
-
-loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearMsgs();
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
-  try {
-    await auth.signInWithEmailAndPassword(email, password);
-  } catch (err) {
-    errorMsg.textContent = traducirError(err.code);
-  }
-});
-
-registerForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearMsgs();
-  const name = document.getElementById("registerName").value.trim();
-  const email = document.getElementById("registerEmail").value.trim();
-  const phone = document.getElementById("registerPhone").value.trim();
-  const password = document.getElementById("registerPassword").value;
-  try {
-    const cred = await auth.createUserWithEmailAndPassword(email, password);
-    const role = ADMIN_EMAILS.includes(email.toLowerCase()) ? "admin" : "user";
-    await db.collection("users").doc(cred.user.uid).set({
-      name, email, phone, role,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (err) {
-    errorMsg.textContent = traducirError(err.code);
-  }
-});
-
-function traducirError(code) {
-  const map = {
-    "auth/email-already-in-use": "Este correo ya está registrado.",
-    "auth/invalid-email": "Correo inválido.",
-    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
-    "auth/user-not-found": "No existe una cuenta con ese correo.",
-    "auth/wrong-password": "Contraseña incorrecta.",
-    "auth/invalid-credential": "Correo o contraseña incorrectos.",
-    "auth/too-many-requests": "Demasiados intentos. Intenta más tarde."
-  };
-  return map[code] || "Ocurrió un error. Intenta de nuevo.";
-}
-</script>
-
-<script>
-// ============================================================
-// VISTA DE USUARIO (participante)
-// ============================================================
-
-let selectedGameId = null;
-let gameUnsub = null;
-let cardUnsub = null;
-let chatUnsub = null;
-let gamesListUnsub = null;
-let myCards = [];               // lista de TODOS los cartones del jugador en el sorteo actual
-let proofImageDataByCard = {};  // foto de comprobante pendiente de enviar, por cartón
-let currentGameData = null;
-let lastAnnouncedWinnerId = null;
-let userNotificationsUnsub = null;
-let adBannerUnsub = null;
-let socialWallUnsub = null;
-let postImageData = "";
-
-function initUserView() {
-  // Reiniciar estado de paneles
-  document.getElementById("activeGamePanel").classList.add("hidden");
-  document.getElementById("chatPanel").classList.add("hidden");
-  selectedGameId = null;
-  myCards = [];
-  proofImageDataByCard = {};
-
-  if (gamesListUnsub) gamesListUnsub();
-  listenUserNotifications();
-  listenFloatingPromos();
-  listenSocialWall();
-  
-  gamesListUnsub = db.collection("games")
-    .where("status", "in", ["open", "running"])
-    .onSnapshot((snap) => {
-      const list = document.getElementById("gamesList");
-      list.innerHTML = "";
-      if (snap.empty) {
-        list.innerHTML = `<p class="empty-state">No hay sorteos activos por el momento. Vuelve pronto 🌱</p>`;
-        return;
-      }
-      snap.forEach((doc) => {
-        const g = doc.data();
-        const div = document.createElement("div");
-        div.className = "plant-item";
-        div.style.cursor = "pointer";
-        div.innerHTML = `
-          <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
-          <div class="plant-body">
-            <span class="pattern-tag">${prizeIcon(g.prizeType)} ${prizeTypeLabel(g.prizeType)}</span>
-            <h4>${g.plantName}</h4>
-            <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
-            <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
-            <p style="margin-top:4px;font-size:0.8rem;color:var(--gray-600);">
-              📅 ${formatDateTime(g.dateTime)}
-            </p>
-          </div>
-        `;
-        div.addEventListener("click", () => selectGame(doc.id));
-        list.appendChild(div);
-      });
-    });
-}
-
-function statusLabel(status) {
-  return { open: "Inscripciones abiertas", running: "¡En juego!", finished: "Finalizado" }[status] || status;
-}
-
-// ---------- Notificaciones persistentes: avisar a todos los jugadores cuando hay un cartón ganador ----------
-function listenUserNotifications() {
-  if (userNotificationsUnsub) userNotificationsUnsub();
-  userNotificationsUnsub = db.collection("notifications")
-    .where("recipientIds", "array-contains", currentUser.uid)
-    .onSnapshot((snap) => {
-      const list = [];
-      snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      renderUserNotifications(list);
-    });
-}
-
-function renderUserNotifications(list) {
-  const badge = document.getElementById("userNotifBadge");
-  const box = document.getElementById("userNotificationsList");
-
-  if (!list.length) {
-    badge.classList.add("hidden");
-    box.innerHTML = `<p class="empty-state">No hay notificaciones nuevas.</p>`;
-    return;
-  }
-
-  const unreadCount = list.filter((n) => !(n.readBy || []).includes(currentUser.uid)).length;
-  if (unreadCount) {
-    badge.classList.remove("hidden");
-    badge.textContent = unreadCount;
-  } else {
-    badge.classList.add("hidden");
-  }
-
-  box.innerHTML = "";
-  list.slice(0, 15).forEach((n) => {
-    const isRead = (n.readBy || []).includes(currentUser.uid);
-    const div = document.createElement("div");
-    div.className = "notif-item";
-    if (isRead) div.style.opacity = "0.6";
-    div.innerHTML = `
-      <div>
-        <strong>🏆 ${n.winnerUserName || "Alguien"}</strong> ganó el sorteo de "${n.gameName || "—"}"
-        <div style="font-size:0.8rem;color:var(--gray-600);">Patrón: ${patternLabel(n.pattern)}</div>
-      </div>
-      <button class="btn small" data-goto-user-game="${n.gameId}" data-user-notif-id="${n.id}">Ver sorteo</button>
-    `;
-    box.appendChild(div);
-  });
-
-  box.querySelectorAll("[data-goto-user-game]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const gameId = btn.dataset.gotoUserGame;
-      const notifId = btn.dataset.userNotifId;
-      selectGame(gameId);
-      document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
-      try {
-        await db.collection("notifications").doc(notifId).update({
-          readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-        });
-      } catch (err) { /* noop */ }
-    });
-  });
-}
-
-// ---------- Videos flotantes: miniaturas de video que llevan a la tienda del administrador ----------
-const dismissedPromosThisSession = {};
-
-function listenFloatingPromos() {
-  if (adBannerUnsub) adBannerUnsub();
-  adBannerUnsub = db.collection("settings").doc("promos").onSnapshot((doc) => {
-    const data = doc.exists ? doc.data() : {};
-    renderFloatingPromo("1", data.promo1);
-    renderFloatingPromo("2", data.promo2);
-    renderFloatingPromo("3", data.promo3);
-  });
-}
-
-function renderFloatingPromo(slot, promo) {
-  const bubble = document.getElementById(`promo${slot}Bubble`);
-  const mediaBox = document.getElementById(`promo${slot}Media`);
-
-  if (!promo || !promo.videoUrl || !promo.storeUrl || dismissedPromosThisSession[slot]) {
-    bubble.classList.add("hidden");
-    mediaBox.innerHTML = "";
-    return;
-  }
-
-  bubble.href = promo.storeUrl;
-  mediaBox.innerHTML = buildPromoMediaHtml(promo.videoUrl);
-  bubble.classList.remove("hidden");
-}
-
-// Construye el reproductor embebido según el tipo de enlace de video.
-function buildPromoMediaHtml(url) {
-  const ytId = extractYouTubeId(url);
-  if (ytId) {
-    return `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-  }
-  // Si no es YouTube, se asume un archivo de video directo (.mp4, .webm, etc).
-  return `<video src="${url}" autoplay muted loop playsinline></video>`;
-}
-
-function extractYouTubeId(url) {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1) || null;
-    if (u.hostname.includes("youtube.com")) {
-      if (u.searchParams.get("v")) return u.searchParams.get("v");
-      const m = u.pathname.match(/\/(embed|shorts)\/([^/?]+)/);
-      if (m) return m[2];
+    .nav-buttons {
+      display: flex;
+      gap: 15px;
     }
-  } catch (err) { /* url inválida */ }
-  return null;
-}
 
-document.querySelectorAll("[data-close-promo]").forEach((btn) => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const slot = btn.dataset.closePromo;
-    dismissedPromosThisSession[slot] = true;
-    document.getElementById(`promo${slot}Bubble`).classList.add("hidden");
-  });
-});
-
-function selectGame(gameId) {
-  selectedGameId = gameId;
-  proofImageDataByCard = {};
-  lastAnnouncedWinnerId = null;
-  document.getElementById("activeGamePanel").classList.remove("hidden");
-  document.getElementById("activeGamePanel").scrollIntoView({ behavior: "smooth" });
-
-  if (gameUnsub) gameUnsub();
-  if (cardUnsub) cardUnsub();
-  if (chatUnsub) chatUnsub();
-
-  gameUnsub = db.collection("games").doc(gameId).onSnapshot((doc) => {
-    if (!doc.exists) return;
-    renderGame(doc.id, doc.data());
-  });
-
-  listenToMyCards(gameId);
-}
-
-function renderGame(gameId, g) {
-  currentGameData = g;
-
-  document.getElementById("activePlantTitle").textContent = `${prizeIcon(g.prizeType)} ${g.plantName}`;
-  document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
-  document.getElementById("gameWinPatternLabel").textContent = "🎯 " + patternLabel(g.winPattern);
-
-  // Mostrar información adicional del sorteo
-  document.getElementById("gameDateTime").textContent = formatDateTime(g.dateTime);
-  document.getElementById("minCards").textContent = g.minCards || 5;
-  document.getElementById("winnerName").textContent = g.winnerUserName || "Aún no hay ganador";
-
-  const galleryImages = (g.plantImages && g.plantImages.length) ? g.plantImages : (g.plantImageUrl ? [g.plantImageUrl] : []);
-  renderPlantGallery(galleryImages);
-
-  const price = g.cardPrice || 1000;
-
-  const called = g.calledNumbers || [];
-  const currentNum = called.length ? called[called.length - 1] : "-";
-  document.getElementById("currentNumberBig").textContent =
-    currentNum === "-" ? "-" : `${letterForNumber(currentNum)}-${currentNum}`;
-
-  const historyEl = document.getElementById("calledHistory");
-  historyEl.innerHTML = "";
-  called.slice().reverse().forEach((n) => {
-    const chip = document.createElement("span");
-    chip.className = "called-chip";
-    chip.textContent = `${letterForNumber(n)}-${n}`;
-    historyEl.appendChild(chip);
-  });
-
-  if (myCards.length) {
-    updateAllCardMarks(called);
-  }
-
-  // ---- Anuncio de ganador a TODOS los jugadores que estén viendo el sorteo ----
-  const winnerBanner = document.getElementById("gameWinnerBanner");
-  if (g.status === "finished" && g.winnerUserName) {
-    winnerBanner.classList.remove("hidden");
-    winnerBanner.innerHTML = `
-      <span class="badge-winner">🏆 ¡${g.winnerUserName} ganó "${g.plantName}"!</span>
-      <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
-        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. El sorteo ha finalizado.
-      </p>
-    `;
-
-    if (g.winnerUserId && g.winnerUserId !== lastAnnouncedWinnerId) {
-      lastAnnouncedWinnerId = g.winnerUserId;
-      if (g.winnerUserId === currentUser.uid) {
-        alert(`🏆 ¡Felicidades! Ganaste el sorteo de "${g.plantName}".\n\nPatrón completado: ${patternLabel(g.winPattern)}.\nRevisa el chat para coordinar la entrega con el administrador.`);
-      } else {
-        alert(`🏆 ¡${g.winnerUserName} ganó el sorteo de "${g.plantName}"!\n\nPatrón completado: ${patternLabel(g.winPattern)}.`);
-      }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-  } else {
-    winnerBanner.classList.add("hidden");
-  }
 
-  document.getElementById("requestCardBtn").disabled = g.status === "finished";
-
-  const chatPanel = document.getElementById("chatPanel");
-  if (g.status === "finished" && g.winnerUserId === currentUser.uid) {
-    chatPanel.classList.remove("hidden");
-    const prizeImg = document.getElementById("chatPrizeImg");
-    if (g.plantImageUrl) {
-      prizeImg.src = g.plantImageUrl;
-      prizeImg.classList.remove("hidden");
-    } else {
-      prizeImg.classList.add("hidden");
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    listenToChat(gameId);
-  } else {
-    chatPanel.classList.add("hidden");
-  }
-  
-  // Actualizar cartones disponibles
-  updateCardsAvailable(g);
-}
 
-function updateCardsAvailable(g) {
-  const cardsAvailableEl = document.getElementById("cardsAvailable");
-  if (g.status === "finished") {
-    cardsAvailableEl.textContent = "Sorteo finalizado";
-  } else {
-    const totalCards = g.totalCards || 0;
-    const minCards = g.minCards || 5;
-    const available = Math.max(0, minCards - totalCards);
-    cardsAvailableEl.textContent = `${available} cartones más para iniciar`;
-  }
-}
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
 
-function renderPlantGallery(images) {
-  const main = document.getElementById("activePlantImg");
-  const thumbs = document.getElementById("activePlantThumbs");
-  const list = (images || []).filter(Boolean);
+    .btn-outline:hover {
+      background: var(--accent);
+      color: white;
+    }
 
-  main.src = list[0] || "";
-  thumbs.innerHTML = "";
+    .btn-danger {
+      background: #f44336;
+    }
 
-  if (list.length > 1) {
-    list.forEach((url, idx) => {
-      const t = document.createElement("img");
-      t.src = url;
-      t.className = "gallery-thumb" + (idx === 0 ? " active" : "");
-      t.alt = "foto del premio";
-      t.addEventListener("click", () => {
-        main.src = url;
-        thumbs.querySelectorAll(".gallery-thumb").forEach((th) => th.classList.remove("active"));
-        t.classList.add("active");
-      });
-      thumbs.appendChild(t);
-    });
-  }
-}
+    .btn-danger:hover {
+      background: #d32f2f;
+    }
 
-function listenToMyCards(gameId) {
-  cardUnsub = db.collection("games").doc(gameId).collection("cards")
-    .where("userId", "==", currentUser.uid)
-    .onSnapshot((snap) => {
-      myCards = snap.docs.map((doc) => {
-        const data = doc.data();
-        if (Array.isArray(data.numbers) && !Array.isArray(data.numbers[0])) {
-          data.numbers = unflattenGrid(data.numbers);
-        }
-        if (Array.isArray(data.marked) && typeof data.marked[0] !== "object") {
-          data.marked = unflattenGrid(data.marked);
-        }
-        return { id: doc.id, data };
-      });
-      // Orden estable por fecha de creación (evita necesitar un índice compuesto en Firestore)
-      myCards.sort((a, b) => (a.data.createdAt?.seconds || 0) - (b.data.createdAt?.seconds || 0));
-      renderMyCards();
-    });
-}
+    /* Card Styles */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 25px;
+      margin-bottom: 25px;
+      transition: var(--transition);
+    }
 
-function renderMyCards() {
-  const container = document.getElementById("myCardsList");
-  container.innerHTML = "";
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
 
-  if (!myCards.length) {
-    container.innerHTML = `<p class="empty-state">Aún no tienes cartones para este sorteo. ¡Solicita el primero!</p>`;
-  }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--light);
+    }
 
-  const price = (currentGameData && currentGameData.cardPrice) || 1000;
-  const sinpe = (currentGameData && currentGameData.sinpeNumber) || "Consulta con el administrador";
+    .card-title {
+      color: var(--primary-dark);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
 
-  myCards.forEach((card, idx) => {
-    const panel = document.createElement("div");
-    panel.className = "card-panel";
-    panel.style.background = "var(--gray-100)";
-    panel.style.marginBottom = "14px";
+    /* Game Grid */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
 
-    if (card.data.paymentStatus !== "approved") {
-      const statusMsg = card.data.paymentStatus === "rejected"
-        ? "❌ Tu comprobante fue rechazado. Sube una nueva foto."
-        : (card.data.paymentProofUrl
-          ? "Comprobante recibido. Esperando aprobación del administrador..."
-          : "Aún no has subido tu comprobante.");
+    .game-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
 
-      panel.innerHTML = `
-        <h4 style="margin-top:0;">Cartón #${idx + 1} — pendiente de pago</h4>
-        <div class="payment-info-box">
-          <p>💰 Costo de este cartón: <strong>₡${Number(price).toLocaleString("es-CR")}</strong></p>
-          <p>📲 Realiza el pago por SINPE Móvil al número: <strong>${sinpe}</strong></p>
-        </div>
-        <p>Toma una foto (o captura de pantalla) de tu comprobante de pago SINPE y súbela aquí.</p>
-        <input type="file" accept="image/*" capture="environment" data-proof-input="${card.id}">
-        <img class="upload-preview hidden" alt="vista previa del comprobante" data-proof-preview="${card.id}">
-        <button class="btn amber" data-upload-proof="${card.id}">Enviar comprobante</button>
-        <p style="font-size:0.85rem;color:var(--gray-600);" data-proof-status="${card.id}">${statusMsg}</p>
-      `;
-      container.appendChild(panel);
+    .game-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
 
-      if (card.data.paymentProofUrl) {
-        const previewImg = panel.querySelector(`[data-proof-preview="${card.id}"]`);
-        previewImg.src = card.data.paymentProofUrl;
-        previewImg.classList.remove("hidden");
-      }
-    } else {
-      // Contar números marcados
-      let markedCount = 0;
-      if (card.data.marked) {
-        for (let row = 0; row < 5; row++) {
-          for (let col = 0; col < 5; col++) {
-            if (card.data.marked[row][col]) markedCount++;
-          }
-        }
+    .game-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: var(--light-gray);
+    }
+
+    .game-content {
+      padding: 20px;
+    }
+
+    .game-title {
+      font-size: 1.3rem;
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+    }
+
+    .game-meta {
+      display: flex;
+      justify-content: space-between;
+      margin: 15px 0;
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    .game-price {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-open {
+      background: #e8f5e9;
+      color: var(--primary);
+    }
+
+    .status-running {
+      background: #fff8e1;
+      color: #ff9800;
+    }
+
+    .status-finished {
+      background: #ffebee;
+      color: #f44336;
+    }
+
+    /* Bingo Card */
+    .bingo-card-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .bingo-card {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .bingo-header {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      font-weight: 700;
+      padding: 12px 0;
+      border-radius: 8px;
+    }
+
+    .bingo-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--light-gray);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: white;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .bingo-cell.marked {
+      background: var(--accent);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .bingo-cell.free {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .bingo-cell.current {
+      animation: pulse 1.5s infinite;
+      border-color: var(--secondary);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+    }
+
+    /* Social Wall */
+    .social-wall {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .post-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .post-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid var(--light-gray);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    .post-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .post-button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .post-button:hover {
+      background: var(--primary-dark);
+    }
+
+    .posts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .post {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .post-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      margin-right: 15px;
+    }
+
+    .post-info {
+      flex: 1;
+    }
+
+    .post-author {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .post-time {
+      font-size: 0.85rem;
+      color: var(--gray);
+    }
+
+    .post-content {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .post-image {
+      width: 100%;
+      border-radius: var(--radius);
+      margin-top: 10px;
+      max-height: 400px;
+      object-fit: cover;
+    }
+
+    .post-actions-bottom {
+      display: flex;
+      gap: 15px;
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    .post-action {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .post-action:hover {
+      color: var(--primary);
+    }
+
+    /* Admin Panel */
+    .admin-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+
+    .admin-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 25px;
+      box-shadow: var(--shadow);
+    }
+
+    .admin-section h3 {
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--light);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid var(--light-gray);
+      border-radius: var(--radius);
+      font-size: 1rem;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    /* Floating Buttons */
+    .floating-buttons {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 99;
+    }
+
+    .floating-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+    }
+
+    .floating-btn:hover {
+      background: var(--primary-dark);
+      transform: scale(1.1);
+    }
+
+    .floating-btn.secondary {
+      background: var(--secondary);
+    }
+
+    .floating-btn.secondary:hover {
+      background: #e65100;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--white);
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 500px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      color: var(--primary-dark);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: var(--gray);
+    }
+
+    .modal-body {
+      margin-bottom: 25px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 15px;
+    }
+
+    /* Notifications */
+    .notifications {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .notification {
+      background: var(--white);
+      border-left: 5px solid var(--accent);
+      padding: 15px 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .notification.success {
+      border-left-color: #4caf50;
+    }
+
+    .notification.error {
+      border-left-color: #f44336;
+    }
+
+    .notification.warning {
+      border-left-color: #ff9800;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 15px;
       }
       
-      panel.innerHTML = `
-        <h4 style="margin-top:0;">Cartón #${idx + 1} ${card.data.completed ? '<span class="badge-winner">🏆 Ganador</span>' : ""}
-          <span class="marked-count">${markedCount}/25</span>
-        </h4>
-        <div class="bingo-card" data-bingo-card="${card.id}"></div>
-        <p class="empty-state hidden" data-win-msg="${card.id}"></p>
-      `;
-      container.appendChild(panel);
-      const calledNums = (currentGameData && currentGameData.calledNumbers) || [];
-      const currentNumber = calledNums.length ? calledNums[calledNums.length - 1] : null;
-      renderBingoCard(card.data.numbers, card.data.marked, card.id, currentNumber);
-      if (card.data.completed) {
-        const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
-        const msgEl = panel.querySelector(`[data-win-msg="${card.id}"]`);
-        msgEl.classList.remove("hidden");
-        msgEl.textContent = `🏆 ¡Este cartón completó el patrón "${patternLabel(pattern)}"!`;
+      .nav-buttons {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .floating-buttons {
+        bottom: 15px;
+        right: 15px;
+      }
+      
+      .floating-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
       }
     }
-  });
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-content">
+      <div class="logo">
+        <i class="fas fa-seedling"></i>
+        <span>Bingo de Plantas</span>
+      </div>
+      <div class="nav-buttons">
+        <button class="btn" id="loginBtn">
+          <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+        </button>
+        <button class="btn btn-outline" id="registerBtn">
+          <i class="fas fa-user-plus"></i> Registrarse
+        </button>
+      </div>
+    </div>
+  </header>
 
-  container.querySelectorAll("[data-proof-input]").forEach((input) => {
-    input.addEventListener("change", (e) => handleProofFileChange(e, input.dataset.proofInput));
-  });
-  container.querySelectorAll("[data-upload-proof]").forEach((btn) => {
-    btn.addEventListener("click", () => handleUploadProof(btn.dataset.uploadProof));
-  });
-}
-
-document.getElementById("requestCardBtn").addEventListener("click", async () => {
-  if (!selectedGameId) return;
-  if (currentGameData && currentGameData.status === "finished") return;
-  
-  // Verificar límite de 3 cartones
-  if (myCards.length >= 3) {
-    alert("Has alcanzado el máximo de 3 cartones por sorteo");
-    return;
-  }
-  
-  const { numbers, marked } = generateBingoCard();
-  const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc();
-  await cardRef.set({
-    userId: currentUser.uid,
-    userName: currentUserData.name,
-    userEmail: currentUserData.email,
-    numbers: flattenGrid(numbers),
-    marked: flattenGrid(marked),
-    paymentProofUrl: null,
-    paymentStatus: "pending",
-    completed: false,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  
-  // Actualizar contador de cartones totales en el sorteo
-  const gameRef = db.collection("games").doc(selectedGameId);
-  await gameRef.update({
-    totalCards: firebase.firestore.FieldValue.increment(1)
-  });
-});
-
-async function handleProofFileChange(e, cardId) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const statusEl = document.querySelector(`[data-proof-status="${cardId}"]`);
-  const preview = document.querySelector(`[data-proof-preview="${cardId}"]`);
-  statusEl.textContent = "Procesando foto...";
-  try {
-    const dataUrl = await fileToCompressedDataUrl(file, 1000, 0.75);
-    proofImageDataByCard[cardId] = dataUrl;
-    preview.src = dataUrl;
-    preview.classList.remove("hidden");
-    statusEl.textContent = 'Foto lista. Presiona "Enviar comprobante".';
-  } catch (err) {
-    statusEl.textContent = "No se pudo procesar la foto: " + err.message;
-  }
-}
-
-async function handleUploadProof(cardId) {
-  const statusEl = document.querySelector(`[data-proof-status="${cardId}"]`);
-  const dataUrl = proofImageDataByCard[cardId];
-  if (!dataUrl) {
-    statusEl.textContent = "Primero toma o selecciona la foto de tu comprobante.";
-    return;
-  }
-  statusEl.textContent = "Enviando comprobante...";
-  try {
-    await db.collection("games").doc(selectedGameId).collection("cards").doc(cardId).update({
-      paymentProofUrl: dataUrl,
-      paymentStatus: "pending"
-    });
-
-    // Notifica al instante al administrador de que hay un comprobante nuevo por revisar.
-    await db.collection("notifications").add({
-      type: "payment_proof",
-      gameId: selectedGameId,
-      gameName: (currentGameData && currentGameData.plantName) || "",
-      cardId,
-      userId: currentUser.uid,
-      userName: currentUserData.name,
-      read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    delete proofImageDataByCard[cardId];
-    statusEl.textContent = "✅ Comprobante enviado. El administrador fue notificado y revisará tu pago.";
-  } catch (err) {
-    statusEl.textContent = "Error al enviar: " + err.message;
-  }
-}
-
-function renderBingoCard(numbers, marked, cardId, currentNumber) {
-  const el = document.querySelector(`[data-bingo-card="${cardId}"]`);
-  if (!el) return;
-  el.innerHTML = "";
-  BINGO_LETTERS.forEach((l) => {
-    const h = document.createElement("div");
-    h.className = "bingo-header";
-    h.textContent = l;
-    el.appendChild(h);
-  });
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      const val = numbers[row][col];
-      const isCurrent = currentNumber != null && val === currentNumber;
-      const cell = document.createElement("div");
-      cell.className = "bingo-cell"
-        + (marked[row][col] ? " marked" : "")
-        + (val === "FREE" ? " free" : "")
-        + (isCurrent ? " current-call" : "");
-      cell.textContent = val;
-      el.appendChild(cell);
-    }
-  }
-}
-
-async function updateAllCardMarks(calledNumbers) {
-  const pattern = (currentGameData && currentGameData.winPattern) || "fullCard";
-  const currentNumber = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
-
-  for (const card of myCards) {
-    if (card.data.paymentStatus !== "approved") continue;
-
-    const newMarked = recalculateMarks(card.data.numbers, calledNumbers);
-    const wasWinning = checkPattern(card.data.marked, pattern);
-    const nowWinning = checkPattern(newMarked, pattern);
-
-    card.data.marked = newMarked;
-    renderBingoCard(card.data.numbers, newMarked, card.id, currentNumber);
-
-    const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc(card.id);
-    cardRef.update({ marked: flattenGrid(newMarked) }).catch(() => {});
-
-    if (!wasWinning && nowWinning) {
-      await tryDeclareWinner(cardRef);
-    }
-  }
-  
-  // Actualizar contadores de números marcados
-  renderMyCards();
-}
-
-async function tryDeclareWinner(cardRef) {
-  const gameRef = db.collection("games").doc(selectedGameId);
-  let becameWinner = false;
-  try {
-    await db.runTransaction(async (tx) => {
-      const gameDoc = await tx.get(gameRef);
-      const gameData = gameDoc.data();
-      if (gameData.status === "finished" || gameData.winnerUserId) return;
-      becameWinner = true;
-      tx.update(gameRef, {
-        status: "finished",
-        winnerUserId: currentUser.uid,
-        winnerUserName: currentUserData.name,
-        winnerUserPhone: currentUserData.phone || null,
-        winnerCardId: cardRef.id,
-        finishedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      tx.update(cardRef, { completed: true, completedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-
-    if (becameWinner) {
-      await notifyAllParticipantsOfWinner();
-    }
-  } catch (err) {
-    console.error("Error en transacción de ganador:", err);
-  }
-}
-
-// Crea una notificación persistente para los jugadores del sorteo (avisando quién ganó)
-// y también para el administrador (para que sepa que hubo un ganador).
-async function notifyAllParticipantsOfWinner() {
-  try {
-    const cardsSnap = await db.collection("games").doc(selectedGameId).collection("cards").get();
-    const recipientIds = [...new Set(cardsSnap.docs.map((d) => d.data().userId).filter(Boolean))];
-    if (!recipientIds.length) return;
-    await db.collection("notifications").add({
-      type: "game_winner",
-      gameId: selectedGameId,
-      gameName: (currentGameData && currentGameData.plantName) || "",
-      winnerUserId: currentUser.uid,
-      winnerUserName: currentUserData.name,
-      pattern: (currentGameData && currentGameData.winPattern) || "fullCard",
-      recipientIds,
-      readBy: [],
-      read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (err) {
-    console.error("No se pudo notificar a los participantes del sorteo:", err);
-  }
-}
-
-function listenToChat(gameId) {
-  chatUnsub = db.collection("games").doc(gameId).collection("chat")
-    .orderBy("createdAt", "asc")
-    .onSnapshot((snap) => {
-      const box = document.getElementById("chatBox");
-      box.innerHTML = "";
-      snap.forEach((doc) => {
-        const m = doc.data();
-        const div = document.createElement("div");
-        div.className = "chat-msg " + (m.senderId === currentUser.uid ? "mine" : "theirs");
-        div.textContent = m.text;
-        box.appendChild(div);
-      });
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-document.getElementById("sendChatBtn").addEventListener("click", sendChatMessage);
-document.getElementById("chatInput").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendChatMessage();
-});
-
-async function sendChatMessage() {
-  const input = document.getElementById("chatInput");
-  const text = input.value.trim();
-  if (!text || !selectedGameId) return;
-  input.value = "";
-  await db.collection("games").doc(selectedGameId).collection("chat").add({
-    text,
-    senderId: currentUser.uid,
-    senderName: currentUserData.name,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-// ---------- Muro social ----------
-function listenSocialWall() {
-  if (socialWallUnsub) socialWallUnsub();
-  socialWallUnsub = db.collection("posts")
-    .orderBy("createdAt", "desc")
-    .onSnapshot((snap) => {
-      const posts = [];
-      snap.forEach((doc) => {
-        posts.push({ id: doc.id, ...doc.data() });
-      });
-      renderSocialWall(posts);
-    });
-}
-
-function renderSocialWall(posts) {
-  const wall = document.getElementById("socialWall");
-  wall.innerHTML = "";
-  
-  if (posts.length === 0) {
-    wall.innerHTML = `<p class="empty-state">Aún no hay publicaciones en el muro.</p>`;
-    return;
-  }
-  
-  posts.forEach(post => {
-    const postEl = document.createElement("div");
-    postEl.className = "post-card";
-    postEl.innerHTML = `
-      <div class="post-header">
-        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
-        <div class="post-info">
-          <div class="post-name">${post.userName}</div>
-          <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
+  <!-- Main Content -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Sorteos Disponibles</h2>
+        <div class="search-box">
+          <input type="text" placeholder="Buscar sorteos..." class="form-control">
         </div>
-        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
-          `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
-      <div class="post-content">${post.content}</div>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
-    `;
-    wall.appendChild(postEl);
-    
-    // Agregar evento para eliminar posts
-    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
-      const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
-      if (deleteBtn) {
-        deleteBtn.addEventListener("click", async () => {
-          if (confirm("¿Eliminar esta publicación?")) {
-            try {
-              await db.collection("posts").doc(post.id).delete();
-            } catch (err) {
-              alert("Error al eliminar la publicación: " + err.message);
-            }
-          }
-        });
-      }
-    }
-  });
-}
-
-// ---------- Modal para crear posts ----------
-document.getElementById("createPostBtn").addEventListener("click", () => {
-  document.getElementById("modalTitle").textContent = "Crear publicación";
-  document.getElementById("postForm").reset();
-  document.getElementById("postImagePreview").classList.add("hidden");
-  postImageData = "";
-  document.getElementById("postModal").classList.remove("hidden");
-});
-
-document.getElementById("closeModal").addEventListener("click", () => {
-  document.getElementById("postModal").classList.add("hidden");
-});
-
-document.getElementById("postImage").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const preview = document.getElementById("postImagePreview");
-  try {
-    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
-    postImageData = dataUrl;
-    preview.src = dataUrl;
-    preview.classList.remove("hidden");
-  } catch (err) {
-    alert("No se pudo procesar la imagen: " + err.message);
-  }
-});
-
-document.getElementById("postForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const content = document.getElementById("postContent").value.trim();
-  if (!content) {
-    alert("Por favor escribe algo para publicar");
-    return;
-  }
-  
-  try {
-    await db.collection("posts").add({
-      content,
-      imageUrl: postImageData || "",
-      userId: currentUser.uid,
-      userName: currentUserData.name,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    document.getElementById("postModal").classList.add("hidden");
-    document.getElementById("postForm").reset();
-    document.getElementById("postImagePreview").classList.add("hidden");
-    postImageData = "";
-  } catch (err) {
-    alert("Error al crear la publicación: " + err.message);
-  }
-});
-
-// ---------- Cambiar contraseña (reutilizable para usuario y administrador) ----------
-// Firebase exige reautenticación reciente para operaciones sensibles, así que
-// primero se confirma la contraseña actual antes de establecer la nueva.
-function wireChangePassword(prefix) {
-  const btn = document.getElementById(`${prefix}ChangePasswordBtn`);
-  if (!btn) return;
-  btn.addEventListener("click", async () => {
-    const statusEl = document.getElementById(`${prefix}PasswordStatus`);
-    const currentPassword = document.getElementById(`${prefix}CurrentPassword`).value;
-    const newPassword = document.getElementById(`${prefix}NewPassword`).value;
-    const confirmPassword = document.getElementById(`${prefix}ConfirmPassword`).value;
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      statusEl.textContent = "Completa los tres campos.";
-      return;
-    }
-    if (newPassword.length < 6) {
-      statusEl.textContent = "La contraseña nueva debe tener al menos 6 caracteres.";
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      statusEl.textContent = "La confirmación no coincide con la contraseña nueva.";
-      return;
-    }
-
-    statusEl.textContent = "Actualizando...";
-    try {
-      const cred = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPassword);
-      await currentUser.reauthenticateWithCredential(cred);
-      await currentUser.updatePassword(newPassword);
-      statusEl.textContent = "✅ Contraseña actualizada correctamente.";
-      document.getElementById(`${prefix}CurrentPassword`).value = "";
-      document.getElementById(`${prefix}NewPassword`).value = "";
-      document.getElementById(`${prefix}ConfirmPassword`).value = "";
-    } catch (err) {
-      statusEl.textContent = traducirError(err.code);
-    }
-  });
-}
-
-wireChangePassword("user");
-</script>
-
-<script>
-// ============================================================
-// VISTA DE ADMINISTRADOR
-// ============================================================
-
-let plantsCache = {};
-let selectedAdminGameId = null;
-let adminGameUnsub = null;
-let adminCardsUnsub = null;
-let adminChatUnsub = null;
-let plantsUnsub = null;
-let gamesSelectorUnsub = null;
-let lastAlertedWinnerId = null;
-let notificationsUnsub = null;
-let plantImageData = ["", "", ""];
-let adAdminUnsub = null;
-let adminSocialWallUnsub = null;
-let autoCallInterval = null;
-let adminPostImageData = "";
-
-[1, 2, 3].forEach((n) => {
-  document.getElementById(`plantImageFile${n}`).addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const preview = document.getElementById(`plantImagePreview${n}`);
-    try {
-      const dataUrl = await fileToCompressedDataUrl(file, 900, 0.7);
-      plantImageData[n - 1] = dataUrl;
-      preview.src = dataUrl;
-      preview.classList.remove("hidden");
-    } catch (err) {
-      alert("No se pudo procesar la foto " + n + ": " + err.message);
-    }
-  });
-});
-
-function initAdminView() {
-  document.getElementById("gameControlPanel").classList.add("hidden");
-  document.getElementById("adminChatPanel").classList.add("hidden");
-  selectedAdminGameId = null;
-  loadPlants();
-  loadGamesSelector();
-  listenNotifications();
-  listenAdSettings();
-  listenWinnersHistory();
-  listenAdminSocialWall();
-  
-  // Establecer fecha y hora actual por defecto
-  document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
-}
-
-// ---------- Videos flotantes: el admin guarda los 3 videos y sus enlaces de tienda ----------
-function listenAdSettings() {
-  if (adAdminUnsub) adAdminUnsub();
-  adAdminUnsub = db.collection("settings").doc("promos").onSnapshot((doc) => {
-    const data = doc.exists ? doc.data() : {};
-    const p1 = data.promo1 || {};
-    const p2 = data.promo2 || {};
-    const p3 = data.promo3 || {};
-    document.getElementById("promo1VideoUrl").value = p1.videoUrl || "";
-    document.getElementById("promo1StoreUrl").value = p1.storeUrl || "";
-    document.getElementById("promo2VideoUrl").value = p2.videoUrl || "";
-    document.getElementById("promo2StoreUrl").value = p2.storeUrl || "";
-    document.getElementById("promo3VideoUrl").value = p3.videoUrl || "";
-    document.getElementById("promo3StoreUrl").value = p3.storeUrl || "";
-  });
-}
-
-function isValidUrlOrEmpty(value) {
-  if (!value) return true;
-  try { new URL(value); return true; } catch { return false; }
-}
-
-document.getElementById("saveAdBtn").addEventListener("click", async () => {
-  const statusEl = document.getElementById("adStatus");
-  const promo1 = {
-    videoUrl: document.getElementById("promo1VideoUrl").value.trim(),
-    storeUrl: document.getElementById("promo1StoreUrl").value.trim()
-  };
-  const promo2 = {
-    videoUrl: document.getElementById("promo2VideoUrl").value.trim(),
-    storeUrl: document.getElementById("promo2StoreUrl").value.trim()
-  };
-  const promo3 = {
-    videoUrl: document.getElementById("promo3VideoUrl").value.trim(),
-    storeUrl: document.getElementById("promo3StoreUrl").value.trim()
-  };
-
-  for (const p of [promo1, promo2, promo3]) {
-    if (!isValidUrlOrEmpty(p.videoUrl) || !isValidUrlOrEmpty(p.storeUrl)) {
-      statusEl.textContent = "Uno de los enlaces no parece válido. Revísalos e intenta de nuevo.";
-      return;
-    }
-    if ((p.videoUrl && !p.storeUrl) || (!p.videoUrl && p.storeUrl)) {
-      statusEl.textContent = "Cada video necesita también su enlace de tienda (y viceversa).";
-      return;
-    }
-  }
-
-  statusEl.textContent = "Guardando...";
-  try {
-    await db.collection("settings").doc("promos").set({
-      promo1, promo2, promo3,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    statusEl.textContent = "✅ Videos guardados. Ya los ven todos los jugadores.";
-  } catch (err) {
-    statusEl.textContent = "Error al guardar: " + err.message;
-  }
-});
-
-document.getElementById("removePromo1Btn").addEventListener("click", async () => {
-  document.getElementById("promo1VideoUrl").value = "";
-  document.getElementById("promo1StoreUrl").value = "";
-  try {
-    await db.collection("settings").doc("promos").set({
-      promo1: { videoUrl: "", storeUrl: "" }
-    }, { merge: true });
-  } catch (err) {
-    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
-  }
-});
-document.getElementById("removePromo2Btn").addEventListener("click", async () => {
-  document.getElementById("promo2VideoUrl").value = "";
-  document.getElementById("promo2StoreUrl").value = "";
-  try {
-    await db.collection("settings").doc("promos").set({
-      promo2: { videoUrl: "", storeUrl: "" }
-    }, { merge: true });
-  } catch (err) {
-    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
-  }
-});
-document.getElementById("removePromo3Btn").addEventListener("click", async () => {
-  document.getElementById("promo3VideoUrl").value = "";
-  document.getElementById("promo3StoreUrl").value = "";
-  try {
-    await db.collection("settings").doc("promos").set({
-      promo3: { videoUrl: "", storeUrl: "" }
-    }, { merge: true });
-  } catch (err) {
-    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
-  }
-});
-
-// ---------- Historial de ganadores: botón de WhatsApp por cada sorteo finalizado ----------
-let winnersHistoryUnsub = null;
-
-function listenWinnersHistory() {
-  if (winnersHistoryUnsub) winnersHistoryUnsub();
-  winnersHistoryUnsub = db.collection("games")
-    .where("status", "==", "finished")
-    .onSnapshot((snap) => {
-      const list = [];
-      snap.forEach((doc) => {
-        const g = doc.data();
-        if (g.winnerUserName) list.push({ id: doc.id, ...g });
-      });
-      // Orden por fecha de finalización más reciente (sin necesitar índice compuesto).
-      list.sort((a, b) => (b.finishedAt?.seconds || 0) - (a.finishedAt?.seconds || 0));
-      renderWinnersHistory(list);
-    });
-}
-
-function renderWinnersHistory(list) {
-  const box = document.getElementById("winnersHistoryList");
-  if (!list.length) {
-    box.innerHTML = `<p class="empty-state">Aún no hay sorteos finalizados con ganador.</p>`;
-    return;
-  }
-  box.innerHTML = "";
-  list.forEach((g) => {
-    const waLink = whatsappLink(
-      g.winnerUserPhone,
-      `¡Hola ${g.winnerUserName}! 🎉 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu premio 🎁`
-    );
-    const row = document.createElement("div");
-    row.className = "notif-item";
-    row.innerHTML = `
-      <div>
-        <strong>${prizeIcon(g.prizeType)} ${g.plantName}</strong>
-        <div style="font-size:0.8rem;color:var(--gray-600);">Ganador: ${g.winnerUserName} — Patrón: ${patternLabel(g.winPattern)}</div>
-        <div style="font-size:0.8rem;color:var(--gray-600);">Fecha: ${formatDateTime(g.dateTime)}</div>
-      </div>
-      ${waLink
-        ? `<a class="btn small" style="width:auto;background:#25D366;text-decoration:none;" target="_blank" rel="noopener" href="${waLink}">📲 WhatsApp</a>`
-        : `<span style="font-size:0.75rem;color:var(--gray-600);">Sin WhatsApp registrado</span>`}
-    `;
-    box.appendChild(row);
-  });
-}
-
-wireChangePassword("admin");
-
-function listenNotifications() {
-  if (notificationsUnsub) notificationsUnsub();
-  notificationsUnsub = db.collection("notifications")
-    .where("read", "==", false)
-    .onSnapshot((snap) => {
-      const list = [];
-      snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      renderNotifications(list);
-    });
-}
-
-function renderNotifications(list) {
-  const badge = document.getElementById("notifBadge");
-  const box = document.getElementById("notificationsList");
-
-  if (!list.length) {
-    badge.classList.add("hidden");
-    box.innerHTML = `<p class="empty-state">No hay notificaciones pendientes.</p>`;
-    return;
-  }
-
-  badge.classList.remove("hidden");
-  badge.textContent = list.length;
-  box.innerHTML = "";
-
-  list.forEach((n) => {
-    const div = document.createElement("div");
-    div.className = "notif-item";
-    const message = n.type === "game_winner"
-      ? `🏆 <strong>${n.winnerUserName || "Un jugador"}</strong> completó el patrón y ganó el sorteo`
-      : `<strong>${n.userName || "Un jugador"}</strong> subió un comprobante de pago 📲`;
-    div.innerHTML = `
-      <div>
-        ${message}
-        <div style="font-size:0.8rem;color:var(--gray-600);">Sorteo: ${n.gameName || "—"}</div>
-      </div>
-      <button class="btn small" data-goto-game="${n.gameId}" data-notif-id="${n.id}">Revisar</button>
-    `;
-    box.appendChild(div);
-  });
-
-  box.querySelectorAll("[data-goto-game]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const gameId = btn.dataset.gotoGame;
-      const notifId = btn.dataset.notifId;
-      document.getElementById("gameSelector").value = gameId;
-      selectAdminGame(gameId);
-      try {
-        await db.collection("notifications").doc(notifId).update({ read: true });
-      } catch (err) { /* noop */ }
-      document.getElementById("gameControlPanel").scrollIntoView({ behavior: "smooth" });
-    });
-  });
-}
-
-function loadPlants() {
-  if (plantsUnsub) plantsUnsub();
-  plantsUnsub = db.collection("plants").orderBy("createdAt", "asc").onSnapshot((snap) => {
-    plantsCache = {};
-    const list = document.getElementById("plantsList");
-    const select = document.getElementById("plantSelectForGame");
-    list.innerHTML = "";
-    select.innerHTML = "<option value=''>-- Selecciona un premio --</option>";
-
-    snap.forEach((doc) => {
-      const p = doc.data();
-      plantsCache[doc.id] = p;
-
-      const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
-      const extraThumbs = images.slice(1).map(url => `<img src="${url}" alt="foto extra">`).join("");
-
-      const item = document.createElement("div");
-      item.className = "plant-item";
-      item.innerHTML = `
-        <img src="${images[0] || ''}" alt="${p.name}">
-        ${extraThumbs ? `<div class="mini-thumbs">${extraThumbs}</div>` : ""}
-        <div class="plant-body">
-          <span class="pattern-tag">${prizeIcon(p.type)} ${prizeTypeLabel(p.type)}</span>
-          <h4>${p.name}</h4>
-          <p>${p.description || ""}</p>
-          <p style="font-size:0.7rem;color:var(--gray-600);">${images.length} foto(s) cargada(s)</p>
-          <div style="margin-top:8px;display:flex;gap:6px;">
-            <button class="btn small secondary" data-edit="${doc.id}">Editar</button>
-            <button class="btn small red" data-delete="${doc.id}">Eliminar</button>
+      <div class="games-grid">
+        <!-- Game Card 1 -->
+        <div class="game-card">
+          <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Monstera Deliciosa" class="game-image">
+          <div class="game-content">
+            <h3 class="game-title">Monstera Deliciosa</h3>
+            <p>Planta tropical de gran tamaño con hojas perforadas</p>
+            <div class="game-meta">
+              <span><i class="fas fa-calendar"></i> 15 Jun 2023</span>
+              <span><i class="fas fa-users"></i> 42 participantes</span>
+            </div>
+            <div class="game-meta">
+              <span class="game-price">₡2,500</span>
+              <span class="status-badge status-open">Inscripciones abiertas</span>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 15px;">
+              <i class="fas fa-ticket-alt"></i> Comprar Cartón
+            </button>
           </div>
         </div>
-      `;
-      list.appendChild(item);
-
-      const opt = document.createElement("option");
-      opt.value = doc.id;
-      opt.textContent = `${prizeIcon(p.type)} ${p.name}`;
-      select.appendChild(opt);
-    });
-
-    list.querySelectorAll("[data-edit]").forEach((btn) => {
-      btn.addEventListener("click", () => editPlant(btn.dataset.edit));
-    });
-    list.querySelectorAll("[data-delete]").forEach((btn) => {
-      btn.addEventListener("click", () => deletePlant(btn.dataset.delete));
-    });
-  });
-}
-
-function editPlant(id) {
-  const p = plantsCache[id];
-  const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
-  plantImageData = [images[0] || "", images[1] || "", images[2] || ""];
-
-  document.getElementById("plantEditId").value = id;
-  document.getElementById("plantType").value = p.type || "planta";
-  document.getElementById("plantName").value = p.name;
-  document.getElementById("plantDesc").value = p.description || "";
-
-  [1, 2, 3].forEach((n) => {
-    const preview = document.getElementById(`plantImagePreview${n}`);
-    const src = plantImageData[n - 1];
-    document.getElementById(`plantImageFile${n}`).value = "";
-    if (src) {
-      preview.src = src;
-      preview.classList.remove("hidden");
-    } else {
-      preview.classList.add("hidden");
-    }
-  });
-
-  document.getElementById("cancelEditBtn").classList.remove("hidden");
-  document.getElementById("plantForm").scrollIntoView({ behavior: "smooth" });
-}
-
-document.getElementById("cancelEditBtn").addEventListener("click", () => {
-  document.getElementById("plantEditId").value = "";
-  document.getElementById("plantType").value = "planta";
-  document.getElementById("plantName").value = "";
-  document.getElementById("plantDesc").value = "";
-  plantImageData = ["", "", ""];
-  [1, 2, 3].forEach((n) => {
-    document.getElementById(`plantImageFile${n}`).value = "";
-    const preview = document.getElementById(`plantImagePreview${n}`);
-    preview.src = "";
-    preview.classList.add("hidden");
-  });
-  document.getElementById("cancelEditBtn").classList.add("hidden");
-});
-
-async function deletePlant(id) {
-  if (!confirm("¿Eliminar este premio? Esta acción no se puede deshacer.")) return;
-  await db.collection("plants").doc(id).delete();
-}
-
-document.getElementById("savePlantBtn").addEventListener("click", async () => {
-  const id = document.getElementById("plantEditId").value;
-  const type = document.getElementById("plantType").value || "planta";
-  const name = document.getElementById("plantName").value.trim();
-  const description = document.getElementById("plantDesc").value.trim();
-  const images = plantImageData.filter(Boolean);
-
-  if (!name) {
-    alert("El nombre del premio es obligatorio.");
-    return;
-  }
-  if (!images.length) {
-    alert("Sube al menos una foto del premio.");
-    return;
-  }
-
-  const btn = document.getElementById("savePlantBtn");
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
-
-  try {
-    const payload = {
-      type, name, description,
-      imageUrl: images[0] || "",
-      images,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    if (id) {
-      await db.collection("plants").doc(id).update(payload);
-    } else {
-      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection("plants").add(payload);
-    }
-
-    document.getElementById("cancelEditBtn").click();
-  } catch (err) {
-    alert("Error al guardar el premio: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Guardar premio";
-  }
-});
-
-function loadGamesSelector() {
-  if (gamesSelectorUnsub) gamesSelectorUnsub();
-  gamesSelectorUnsub = db.collection("games").orderBy("createdAt", "desc").onSnapshot((snap) => {
-    const select = document.getElementById("gameSelector");
-    const prevValue = select.value;
-    select.innerHTML = "<option value=''>-- Selecciona un sorteo --</option>";
-    snap.forEach((doc) => {
-      const g = doc.data();
-      const opt = document.createElement("option");
-      opt.value = doc.id;
-      opt.textContent = `${prizeIcon(g.prizeType)} ${g.plantName} (${statusLabelAdmin(g.status)})`;
-      select.appendChild(opt);
-    });
-    if (prevValue) select.value = prevValue;
-  });
-}
-
-function statusLabelAdmin(status) {
-  return { open: "Abierto", running: "En curso", finished: "Finalizado" }[status] || status;
-}
-
-document.getElementById("createGameBtn").addEventListener("click", async () => {
-  const plantId = document.getElementById("plantSelectForGame").value;
-  if (!plantId) {
-    alert("Selecciona un premio primero.");
-    return;
-  }
-  const plant = plantsCache[plantId];
-  const sinpeNumber = document.getElementById("newGameSinpe").value.trim();
-  const cardPrice = Number(document.getElementById("newGamePrice").value) || 1000;
-  const dateTime = document.getElementById("newGameDateTime").value;
-  const minCards = Number(document.getElementById("newGameMinCards").value) || 5;
-  const winPattern = document.getElementById("newGamePattern").value || "fullCard";
-  const plantImages = (plant.images && plant.images.length) ? plant.images : (plant.imageUrl ? [plant.imageUrl] : []);
-
-  const gameRef = await db.collection("games").add({
-    plantId,
-    prizeType: plant.type || "planta",
-    plantName: plant.name,
-    plantDescription: plant.description || "",
-    plantImageUrl: plantImages[0] || "",
-    plantImages,
-    sinpeNumber: sinpeNumber || "",
-    cardPrice,
-    dateTime,
-    minCards,
-    winPattern,
-    status: "open",
-    calledNumbers: [],
-    winnerUserId: null,
-    winnerUserName: null,
-    winnerCardId: null,
-    totalCards: 0,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  document.getElementById("newGameSinpe").value = "";
-  document.getElementById("newGamePrice").value = "1000";
-  document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
-  document.getElementById("newGameMinCards").value = "5";
-  document.getElementById("newGamePattern").value = "fullCard";
-
-  document.getElementById("gameSelector").value = gameRef.id;
-  selectAdminGame(gameRef.id);
-});
-
-document.getElementById("gameSelector").addEventListener("change", (e) => {
-  if (e.target.value) selectAdminGame(e.target.value);
-  else {
-    document.getElementById("gameControlPanel").classList.add("hidden");
-    document.getElementById("adminChatPanel").classList.add("hidden");
-    if (autoCallInterval) {
-      clearInterval(autoCallInterval);
-      autoCallInterval = null;
-    }
-  }
-});
-
-function selectAdminGame(gameId) {
-  selectedAdminGameId = gameId;
-  lastAlertedWinnerId = null;
-  document.getElementById("gameControlPanel").classList.remove("hidden");
-  document.getElementById("gameSettingsStatus").textContent = "";
-
-  if (adminGameUnsub) adminGameUnsub();
-  if (adminCardsUnsub) adminCardsUnsub();
-  if (adminChatUnsub) adminChatUnsub();
-
-  // Carga inicial de la configuración editable (SINPE, precio, patrón) del sorteo
-  db.collection("games").doc(gameId).get().then((doc) => {
-    if (!doc.exists) return;
-    const g = doc.data();
-    document.getElementById("editSinpe").value = g.sinpeNumber || "";
-    document.getElementById("editPrice").value = g.cardPrice || 1000;
-    document.getElementById("editDateTime").value = g.dateTime || "";
-    document.getElementById("editMinCards").value = g.minCards || 5;
-    document.getElementById("editPattern").value = g.winPattern || "fullCard";
-    if (g.winnerUserId) lastAlertedWinnerId = g.winnerUserId;
-  });
-
-  adminGameUnsub = db.collection("games").doc(gameId).onSnapshot((doc) => {
-    if (!doc.exists) return;
-    renderAdminGame(doc.id, doc.data());
-  });
-
-  adminCardsUnsub = db.collection("games").doc(gameId).collection("cards")
-    .orderBy("createdAt", "asc")
-    .onSnapshot((snap) => renderParticipants(gameId, snap));
-}
-
-document.getElementById("saveGameSettingsBtn").addEventListener("click", async () => {
-  if (!selectedAdminGameId) return;
-  const sinpeNumber = document.getElementById("editSinpe").value.trim();
-  const cardPrice = Number(document.getElementById("editPrice").value) || 1000;
-  const dateTime = document.getElementById("editDateTime").value;
-  const minCards = Number(document.getElementById("editMinCards").value) || 5;
-  const winPattern = document.getElementById("editPattern").value || "fullCard";
-  const statusEl = document.getElementById("gameSettingsStatus");
-
-  statusEl.textContent = "Guardando...";
-  try {
-    await db.collection("games").doc(selectedAdminGameId).update({ 
-      sinpeNumber, 
-      cardPrice, 
-      dateTime,
-      minCards,
-      winPattern 
-    });
-    statusEl.textContent = "✅ Configuración actualizada.";
-  } catch (err) {
-    statusEl.textContent = "Error al guardar: " + err.message;
-  }
-});
-
-function renderAdminGame(gameId, g) {
-  document.getElementById("gameControlTitle").textContent =
-    `Sorteo: ${prizeIcon(g.prizeType)} ${g.plantName} — ${statusLabelAdmin(g.status)} — 🎯 ${patternLabel(g.winPattern)}`;
-
-  const called = g.calledNumbers || [];
-  const currentNum = called.length ? called[called.length - 1] : "-";
-  document.getElementById("adminCurrentNumber").textContent =
-    currentNum === "-" ? "-" : `${letterForNumber(currentNum)}-${currentNum}`;
-
-  const historyEl = document.getElementById("adminCalledHistory");
-  historyEl.innerHTML = "";
-  called.slice().reverse().forEach((n) => {
-    const chip = document.createElement("span");
-    chip.className = "called-chip";
-    chip.textContent = `${letterForNumber(n)}-${n}`;
-    historyEl.appendChild(chip);
-  });
-
-  const banner = document.getElementById("winnerBanner");
-  const callBtn = document.getElementById("callNumberBtn");
-  if (g.status === "finished" && g.winnerUserName) {
-    banner.classList.remove("hidden");
-    banner.classList.add("winner-alert-flash");
-
-    const waLink = whatsappLink(
-      g.winnerUserPhone,
-      `¡Hola ${g.winnerUserName}! 🎉 Ganaste el sorteo de "${g.plantName}" en Bingo de Plantas. Coordinemos la entrega de tu premio 🎁`
-    );
-    const waButton = waLink
-      ? `<a class="btn small" style="width:auto;background:#25D366;display:inline-block;text-decoration:none;margin-top:8px;" target="_blank" rel="noopener" href="${waLink}">📲 Enviar WhatsApp al ganador</a>`
-      : `<p style="font-size:0.8rem;color:var(--gray-600);margin-top:8px;">Este jugador no tiene número de WhatsApp registrado.</p>`;
-
-    banner.innerHTML = `
-      <span class="badge-winner">🏆 Ganador: ${g.winnerUserName}</span>
-      <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">
-        Patrón completado: <strong>${patternLabel(g.winPattern)}</strong>. Coordina la entrega del premio por WhatsApp o por el chat de abajo.
-      </p>
-      ${waButton}
-    `;
-    callBtn.disabled = true;
-    document.getElementById("adminChatPanel").classList.remove("hidden");
-    listenAdminChat(gameId);
-
-    // Imagen del premio ganado y datos para el mensaje de felicitación rápido.
-    const prizeImg = document.getElementById("adminChatPrizeImg");
-    if (g.plantImageUrl) {
-      prizeImg.src = g.plantImageUrl;
-      prizeImg.classList.remove("hidden");
-    } else {
-      prizeImg.classList.add("hidden");
-    }
-    adminChatContext = { plantName: g.plantName, winnerUserName: g.winnerUserName };
-
-    // Alerta instantánea al administrador la primera vez que se detecta un ganador
-    if (g.winnerUserId && g.winnerUserId !== lastAlertedWinnerId) {
-      lastAlertedWinnerId = g.winnerUserId;
-      alert(`🏆 ¡Nuevo cartón ganador!\n\nJugador: ${g.winnerUserName}\nSorteo: ${g.plantName}\nPatrón: ${patternLabel(g.winPattern)}\n\nRevisa el chat o usa el botón de WhatsApp para coordinar la entrega del premio.`);
-    }
-  } else {
-    banner.classList.add("hidden");
-    banner.classList.remove("winner-alert-flash");
-    callBtn.disabled = called.length >= 75;
-    document.getElementById("adminChatPanel").classList.add("hidden");
-  }
-}
-
-// ---------- Funcionalidad de cantar números automáticamente ----------
-document.getElementById("callNumberBtn").addEventListener("click", async () => {
-  if (!selectedAdminGameId) return;
-  
-  // Si ya hay un intervalo activo, detenerlo
-  if (autoCallInterval) {
-    clearInterval(autoCallInterval);
-    autoCallInterval = null;
-    document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
-    return;
-  }
-  
-  // Iniciar el canto automático cada 7 segundos
-  autoCallInterval = setInterval(async () => {
-    await callNextNumber();
-  }, 7000);
-  
-  document.getElementById("callNumberBtn").textContent = "⏹ Detener canto automático";
-  
-  // Llamar al primer número inmediatamente
-  await callNextNumber();
-});
-
-async function callNextNumber() {
-  if (!selectedAdminGameId) return;
-  const gameRef = db.collection("games").doc(selectedAdminGameId);
-
-  await db.runTransaction(async (tx) => {
-    const doc = await tx.get(gameRef);
-    const g = doc.data();
-    if (g.status === "finished") {
-      if (autoCallInterval) {
-        clearInterval(autoCallInterval);
-        autoCallInterval = null;
-        document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
-      }
-      return;
-    }
-
-    const called = g.calledNumbers || [];
-    const pool = [];
-    for (let n = 1; n <= 75; n++) {
-      if (!called.includes(n)) pool.push(n);
-    }
-    if (!pool.length) {
-      if (autoCallInterval) {
-        clearInterval(autoCallInterval);
-        autoCallInterval = null;
-        document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
-      }
-      return;
-    }
-
-    const next = pool[Math.floor(Math.random() * pool.length)];
-    const newStatus = g.status === "open" ? "running" : g.status;
-
-    tx.update(gameRef, { calledNumbers: [...called, next], status: newStatus });
-  });
-}
-
-document.getElementById("resetGameBtn").addEventListener("click", async () => {
-  if (!selectedAdminGameId) return;
-  if (!confirm("Esto reiniciará los números cantados y el ganador de este sorteo. ¿Continuar?")) return;
-
-  lastAlertedWinnerId = null;
-
-  await db.collection("games").doc(selectedAdminGameId).update({
-    calledNumbers: [],
-    status: "open",
-    winnerUserId: null,
-    winnerUserName: null,
-    winnerCardId: null,
-    finishedAt: null
-  });
-
-  const cardsSnap = await db.collection("games").doc(selectedAdminGameId).collection("cards").get();
-  const batch = db.batch();
-  cardsSnap.forEach((doc) => {
-    const data = doc.data();
-    const numbersGrid = Array.isArray(data.numbers) && !Array.isArray(data.numbers[0])
-      ? unflattenGrid(data.numbers)
-      : data.numbers;
-    const resetMarked = recalculateMarks(numbersGrid, []);
-    batch.update(doc.ref, { marked: flattenGrid(resetMarked), completed: false });
-  });
-  await batch.commit();
-  
-  // Detener canto automático si estaba activo
-  if (autoCallInterval) {
-    clearInterval(autoCallInterval);
-    autoCallInterval = null;
-    document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
-  }
-});
-
-document.getElementById("deleteGameBtn").addEventListener("click", async () => {
-  if (!selectedAdminGameId) return;
-  if (!confirm("Esto eliminará el sorteo por completo, junto con todos sus cartones y el chat. Esta acción no se puede deshacer. ¿Continuar?")) return;
-
-  const gameId = selectedAdminGameId;
-  const statusEl = document.getElementById("gameSettingsStatus");
-  statusEl.textContent = "Eliminando sorteo...";
-
-  try {
-    await deleteGameCompletely(gameId);
-    statusEl.textContent = "";
-    document.getElementById("gameControlPanel").classList.add("hidden");
-    if (adminGameUnsub) adminGameUnsub();
-    if (adminCardsUnsub) adminCardsUnsub();
-    if (adminChatUnsub) adminChatUnsub();
-    selectedAdminGameId = null;
-    document.getElementById("gameSelector").value = "";
-    
-    // Detener canto automático si estaba activo
-    if (autoCallInterval) {
-      clearInterval(autoCallInterval);
-      autoCallInterval = null;
-    }
-  } catch (err) {
-    statusEl.textContent = "Error al eliminar el sorteo: " + err.message;
-  }
-});
-
-// Borra un sorteo y todo lo que le pertenece (cartones y mensajes de chat).
-// Firestore no borra subcolecciones al borrar el documento padre, así que
-// hay que borrar cada subcolección manualmente antes de borrar el sorteo.
-async function deleteGameCompletely(gameId) {
-  const gameRef = db.collection("games").doc(gameId);
-
-  await deleteAllDocsInSubcollection(gameRef.collection("cards"));
-  await deleteAllDocsInSubcollection(gameRef.collection("chat"));
-
-  await gameRef.delete();
-}
-
-async function deleteAllDocsInSubcollection(collectionRef) {
-  const snap = await collectionRef.get();
-  if (snap.empty) return;
-
-  // Firestore permite máximo 500 operaciones por batch.
-  const chunks = [];
-  for (let i = 0; i < snap.docs.length; i += 450) {
-    chunks.push(snap.docs.slice(i, i + 450));
-  }
-  for (const chunk of chunks) {
-    const batch = db.batch();
-    chunk.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-  }
-}
-
-function renderParticipants(gameId, snap) {
-  const tbody = document.getElementById("participantsTable");
-  tbody.innerHTML = "";
-  if (snap.empty) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Aún no hay participantes inscritos.</td></tr>`;
-    return;
-  }
-  snap.forEach((doc) => {
-    const c = doc.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.userName}${c.completed ? ' <span class="badge-winner">🏆</span>' : ""}</td>
-      <td>${c.userEmail}</td>
-      <td>${paymentStatusLabel(c.paymentStatus)}</td>
-      <td>${c.paymentProofUrl ? `<img class="proof-thumb" src="${c.paymentProofUrl}" data-view-proof="${c.paymentProofUrl.replace(/"/g, '&quot;')}" alt="comprobante">` : "—"}</td>
-      <td>${c.paymentStatus === "approved" ? "Cartón activo" : "Sin activar"}</td>
-      <td>
-        ${c.paymentStatus !== "approved"
-          ? `<button class="btn small" data-approve="${doc.id}">Aprobar</button>
-             <button class="btn small red" data-reject="${doc.id}">Rechazar</button>`
-          : "—"}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  tbody.querySelectorAll("[data-view-proof]").forEach((imgEl) => {
-    imgEl.addEventListener("click", () => openLightbox(imgEl.dataset.viewProof));
-  });
-
-  tbody.querySelectorAll("[data-approve]").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      db.collection("games").doc(gameId).collection("cards").doc(btn.dataset.approve)
-        .update({ paymentStatus: "approved" })
-    );
-  });
-  tbody.querySelectorAll("[data-reject]").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      db.collection("games").doc(gameId).collection("cards").doc(btn.dataset.reject)
-        .update({ paymentStatus: "rejected" })
-    );
-  });
-}
-
-function paymentStatusLabel(status) {
-  return { pending: "⏳ Pendiente", approved: "✅ Aprobado", rejected: "❌ Rechazado" }[status] || "⏳ Pendiente";
-}
-
-function listenAdminChat(gameId) {
-  adminChatUnsub = db.collection("games").doc(gameId).collection("chat")
-    .orderBy("createdAt", "asc")
-    .onSnapshot((snap) => {
-      const box = document.getElementById("adminChatBox");
-      box.innerHTML = "";
-      snap.forEach((doc) => {
-        const m = doc.data();
-        const div = document.createElement("div");
-        div.className = "chat-msg " + (m.senderId === currentUser.uid ? "mine" : "theirs");
-        div.textContent = m.text;
-        box.appendChild(div);
-      });
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-document.getElementById("adminSendChatBtn").addEventListener("click", sendAdminChatMessage);
-document.getElementById("adminChatInput").addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendAdminChatMessage();
-});
-
-async function sendAdminChatMessage() {
-  const input = document.getElementById("adminChatInput");
-  const text = input.value.trim();
-  if (!text || !selectedAdminGameId) return;
-  input.value = "";
-  await db.collection("games").doc(selectedAdminGameId).collection("chat").add({
-    text,
-    senderId: currentUser.uid,
-    senderName: "Administrador",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-}
-
-// ---------- Mensaje de felicitación configurado ----------
-// Guarda los datos del ganador actual para armar el mensaje, y deja el texto
-// listo en el cuadro de chat para que el admin lo revise antes de enviarlo.
-let adminChatContext = null;
-
-document.getElementById("sendCongratsBtn").addEventListener("click", () => {
-  if (!adminChatContext) return;
-  const { plantName, winnerUserName } = adminChatContext;
-  document.getElementById("adminChatInput").value =
-    `¡Felicidades ${winnerUserName}! 🎉🌱 Ganaste el sorteo de "${plantName}". Por aquí coordinamos la entrega de tu premio, ¡gracias por participar!`;
-  document.getElementById("adminChatInput").focus();
-});
-
-// ---------- Muro social admin ----------
-function listenAdminSocialWall() {
-  if (adminSocialWallUnsub) adminSocialWallUnsub();
-  adminSocialWallUnsub = db.collection("posts")
-    .orderBy("createdAt", "desc")
-    .onSnapshot((snap) => {
-      const posts = [];
-      snap.forEach((doc) => {
-        posts.push({ id: doc.id, ...doc.data() });
-      });
-      renderAdminSocialWall(posts);
-    });
-}
-
-function renderAdminSocialWall(posts) {
-  const wall = document.getElementById("adminSocialWall");
-  wall.innerHTML = "";
-  
-  if (posts.length === 0) {
-    wall.innerHTML = `<p class="empty-state">Aún no hay publicaciones en el muro.</p>`;
-    return;
-  }
-  
-  posts.forEach(post => {
-    const postEl = document.createElement("div");
-    postEl.className = "post-card";
-    postEl.innerHTML = `
-      <div class="post-header">
-        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
-        <div class="post-info">
-          <div class="post-name">${post.userName}</div>
-          <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
+        
+        <!-- Game Card 2 -->
+        <div class="game-card">
+          <img src="https://images.unsplash.com/photo-1598983069272-7f28abb4a138?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Kit de Jardín" class="game-image">
+          <div class="game-content">
+            <h3 class="game-title">Kit de Jardín Completo</h3>
+            <p>Herramientas, macetas y fertilizantes para tu jardín</p>
+            <div class="game-meta">
+              <span><i class="fas fa-calendar"></i> 20 Jun 2023</span>
+              <span><i class="fas fa-users"></i> 28 participantes</span>
+            </div>
+            <div class="game-meta">
+              <span class="game-price">₡3,200</span>
+              <span class="status-badge status-running">¡En juego!</span>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 15px;">
+              <i class="fas fa-ticket-alt"></i> Ver Cartones
+            </button>
+          </div>
         </div>
-        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
-          `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
+        
+        <!-- Game Card 3 -->
+        <div class="game-card">
+          <img src="https://images.unsplash.com/photo-1597848212624-a19eb35e2651?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Colección de Suculentas" class="game-image">
+          <div class="game-content">
+            <h3 class="game-title">Colección de Suculentas</h3>
+            <p>Variedad de 10 suculentas decorativas</p>
+            <div class="game-meta">
+              <span><i class="fas fa-calendar"></i> 25 Jun 2023</span>
+              <span><i class="fas fa-users"></i> 15 participantes</span>
+            </div>
+            <div class="game-meta">
+              <span class="game-price">₡1,800</span>
+              <span class="status-badge status-open">Inscripciones abiertas</span>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 15px;">
+              <i class="fas fa-ticket-alt"></i> Comprar Cartón
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="post-content">${post.content}</div>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
-    `;
-    wall.appendChild(postEl);
+    </div>
     
-    // Agregar evento para eliminar posts
-    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
-      const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
-      if (deleteBtn) {
-        deleteBtn.addEventListener("click", async () => {
-          if (confirm("¿Eliminar esta publicación?")) {
-            try {
-              await db.collection("posts").doc(post.id).delete();
-            } catch (err) {
-              alert("Error al eliminar la publicación: " + err.message);
-            }
-          }
-        });
-      }
-    }
-  });
-}
-
-// ---------- Modal para crear posts admin ----------
-document.getElementById("createAdminPostBtn").addEventListener("click", () => {
-  document.getElementById("modalTitle").textContent = "Publicar ganador";
-  document.getElementById("postForm").reset();
-  document.getElementById("postImagePreview").classList.add("hidden");
-  adminPostImageData = "";
-  document.getElementById("postModal").classList.remove("hidden");
-});
-
-document.getElementById("postImage").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const preview = document.getElementById("postImagePreview");
-  try {
-    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
-    adminPostImageData = dataUrl;
-    preview.src = dataUrl;
-    preview.classList.remove("hidden");
-  } catch (err) {
-    alert("No se pudo procesar la imagen: " + err.message);
-  }
-});
-
-document.getElementById("postForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const content = document.getElementById("postContent").value.trim();
-  if (!content) {
-    alert("Por favor escribe algo para publicar");
-    return;
-  }
+    <!-- Social Wall -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Muro de la Comunidad</h2>
+        <button class="btn" id="createPostBtn">
+          <i class="fas fa-plus"></i> Crear Publicación
+        </button>
+      </div>
+      <div class="social-wall">
+        <div class="post-form">
+          <textarea class="post-input" placeholder="¿Qué estás pensando?"></textarea>
+          <div class="post-actions">
+            <div>
+              <button class="btn btn-outline">
+                <i class="fas fa-image"></i> Foto
+              </button>
+            </div>
+            <button class="post-button">
+              <i class="fas fa-paper-plane"></i> Publicar
+            </button>
+          </div>
+        </div>
+        
+        <div class="posts-container">
+          <!-- Post 1 -->
+          <div class="post">
+            <div class="post-header">
+              <div class="post-avatar">M</div>
+              <div class="post-info">
+                <div class="post-author">María González</div>
+                <div class="post-time">Hace 2 horas</div>
+              </div>
+              <button class="btn btn-outline" style="padding: 5px 10px;">
+                <i class="fas fa-ellipsis-h"></i>
+              </button>
+            </div>
+            <div class="post-content">
+              ¡Gané el sorteo de la Monstera! Gracias a Bingo de Plantas por esta hermosa planta. 
+              Ya la tengo en mi sala y luce espectacular. 🌿
+            </div>
+            <img src="https://images.unsplash.com/photo-1598983069272-7f28abb4a138?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Monstera ganada" class="post-image">
+            <div class="post-actions-bottom">
+              <div class="post-action">
+                <i class="fas fa-heart"></i> 24 Me gusta
+              </div>
+              <div class="post-action">
+                <i class="fas fa-comment"></i> 5 Comentarios
+              </div>
+              <div class="post-action">
+                <i class="fas fa-share"></i> Compartir
+              </div>
+            </div>
+          </div>
+          
+          <!-- Post 2 -->
+          <div class="post">
+            <div class="post-header">
+              <div class="post-avatar">J</div>
+              <div class="post-info">
+                <div class="post-author">Juan Pérez</div>
+                <div class="post-time">Hace 1 día</div>
+              </div>
+              <button class="btn btn-outline" style="padding: 5px 10px;">
+                <i class="fas fa-ellipsis-h"></i>
+              </button>
+            </div>
+            <div class="post-content">
+              Mi nuevo kit de jardín llegó hoy. ¡Estoy emocionado por comenzar mi propio 
+              huerto en el balcón! Gracias a todos por sus recomendaciones de plantas.
+            </div>
+            <div class="post-actions-bottom">
+              <div class="post-action">
+                <i class="fas fa-heart"></i> 18 Me gusta
+              </div>
+              <div class="post-action">
+                <i class="fas fa-comment"></i> 3 Comentarios
+              </div>
+              <div class="post-action">
+                <i class="fas fa-share"></i> Compartir
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   
-  try {
-    await db.collection("posts").add({
-      content,
-      imageUrl: adminPostImageData || "",
-      userId: currentUser.uid,
-      userName: "Administrador",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  <!-- Floating Buttons -->
+  <div class="floating-buttons">
+    <button class="floating-btn" id="shopBtn" title="Tienda">
+      <i class="fas fa-shopping-cart"></i>
+    </button>
+    <button class="floating-btn secondary" id="websiteBtn" title="Sitio Web">
+      <i class="fas fa-globe"></i>
+    </button>
+  </div>
+  
+  <!-- Modals -->
+  <!-- Login Modal -->
+  <div class="modal" id="loginModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Iniciar Sesión</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="loginEmail">Correo Electrónico</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="tu@correo.com">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
+        </div>
+        <button class="btn" style="width: 100%;">
+          <i class="fas fa-sign-in-alt"></i> Ingresar
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Register Modal -->
+  <div class="modal" id="registerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Crear Cuenta</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="registerName">Nombre Completo</label>
+          <input type="text" id="registerName" class="form-control" placeholder="Tu nombre">
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">Correo Electrónico</label>
+          <input type="email" id="registerEmail" class="form-control" placeholder="tu@correo.com">
+        </div>
+        <div class="form-group">
+          <label for="registerPhone">Número de WhatsApp</label>
+          <input type="tel" id="registerPhone" class="form-control" placeholder="8888-8888">
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">Contraseña</label>
+          <input type="password" id="registerPassword" class="form-control" placeholder="••••••••">
+        </div>
+        <button class="btn" style="width: 100%;">
+          <i class="fas fa-user-plus"></i> Crear Cuenta
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Change Password Modal -->
+  <div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Cambiar Contraseña</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="currentPassword">Contraseña Actual</label>
+          <input type="password" id="currentPassword" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label for="newPassword">Nueva Contraseña</label>
+          <input type="password" id="newPassword" class="form-control" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar Nueva Contraseña</label>
+          <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••">
+        </div>
+        <button class="btn" style="width: 100%;">
+          <i class="fas fa-key"></i> Cambiar Contraseña
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Admin Panel Modal -->
+  <div class="modal" id="adminPanelModal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Panel de Administrador</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="admin-panel">
+          <div class="admin-section">
+            <h3>Configuración del Sitio</h3>
+            <div class="form-group">
+              <label for="siteName">Nombre del Sitio</label>
+              <input type="text" id="siteName" class="form-control" value="Bingo de Plantas">
+            </div>
+            <div class="form-group">
+              <label for="siteDescription">Descripción</label>
+              <textarea id="siteDescription" class="form-control">Participa en sorteos de plantas y productos de jardinería</textarea>
+            </div>
+          </div>
+          
+          <div class="admin-section">
+            <h3>Enlaces Externos</h3>
+            <div class="form-group">
+              <label for="shopUrl">URL de la Tienda</label>
+              <input type="url" id="shopUrl" class="form-control" value="https://tienda-plantas.com">
+            </div>
+            <div class="form-group">
+              <label for="websiteUrl">URL del Sitio Web</label>
+              <input type="url" id="websiteUrl" class="form-control" value="https://bingodeplantas.com">
+            </div>
+          </div>
+          
+          <div class="admin-section">
+            <h3>API de Inteligencia Artificial</h3>
+            <div class="form-group">
+              <label for="apiKey">Clave API</label>
+              <input type="text" id="apiKey" class="form-control" placeholder="Ingrese su clave API">
+            </div>
+            <div class="form-group">
+              <label for="aiModel">Modelo de IA</label>
+              <select id="aiModel" class="form-control">
+                <option>GPT-4</option>
+                <option>GPT-3.5</option>
+                <option>Claude</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="aiPrompts">Prompts de Entrenamiento</label>
+              <textarea id="aiPrompts" class="form-control" rows="4" placeholder="Ingrese prompts para entrenar al asistente"></textarea>
+            </div>
+          </div>
+          
+          <div class="admin-section">
+            <h3>Sorteos Activos</h3>
+            <div class="form-group">
+              <label for="activeGames">Número de sorteos activos</label>
+              <input type="number" id="activeGames" class="form-control" value="3" readonly>
+            </div>
+            <div class="form-group">
+              <label for="autoCallInterval">Intervalo de canto automático (segundos)</label>
+              <input type="number" id="autoCallInterval" class="form-control" value="5" min="1">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button class="btn">
+          <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notifications -->
+  <div class="notifications">
+    <div class="notification success">
+      <i class="fas fa-check-circle"></i>
+      <div>
+        <strong>¡Felicidades!</strong> Has ganado el sorteo de Monstera Deliciosa
+      </div>
+    </div>
+    <div class="notification warning">
+      <i class="fas fa-exclamation-circle"></i>
+      <div>
+        <strong>Recordatorio:</strong> El sorteo de Kit de Jardín comienza en 1 hora
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Modal functionality
+    document.querySelectorAll('.close-modal').forEach(button => {
+      button.addEventListener('click', () => {
+        button.closest('.modal').style.display = 'none';
+      });
     });
     
-    document.getElementById("postModal").classList.add("hidden");
-    document.getElementById("postForm").reset();
-    document.getElementById("postImagePreview").classList.add("hidden");
-    adminPostImageData = "";
-  } catch (err) {
-    alert("Error al crear la publicación: " + err.message);
-  }
-});
-</script>
-
-<div class="lightbox-overlay hidden" id="lightboxOverlay">
-  <button class="btn red lightbox-close" id="lightboxCloseBtn">Cerrar ✕</button>
-  <img id="lightboxImg" src="" alt="comprobante ampliado">
-</div>
-
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      document.getElementById('loginModal').style.display = 'flex';
+    });
+    
+    document.getElementById('registerBtn').addEventListener('click', () => {
+      document.getElementById('registerModal').style.display = 'flex';
+    });
+    
+    document.getElementById('createPostBtn').addEventListener('click', () => {
+      alert('Funcionalidad de creación de publicación implementada');
+    });
+    
+    // Floating buttons
+    document.getElementById('shopBtn').addEventListener('click', () => {
+      const shopUrl = document.getElementById('shopUrl')?.value || 'https://tienda-plantas.com';
+      window.open(shopUrl, '_blank');
+    });
+    
+    document.getElementById('websiteBtn').addEventListener('click', () => {
+      const websiteUrl = document.getElementById('websiteUrl')?.value || 'https://bingodeplantas.com';
+      window.open(websiteUrl, '_blank');
+    });
+    
+    // Admin panel
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        document.getElementById('adminPanelModal').style.display = 'flex';
+      }
+    });
+    
+    // Simulate auto call numbers
+    setInterval(() => {
+      const cells = document.querySelectorAll('.bingo-cell');
+      if (cells.length > 0) {
+        // Remove previous current class
+        document.querySelectorAll('.bingo-cell.current').forEach(el => {
+          el.classList.remove('current');
+        });
+        
+        // Add current class to a random cell
+        const randomIndex = Math.floor(Math.random() * cells.length);
+        cells[randomIndex].classList.add('current');
+      }
+    }, 5000);
+    
+    // Mark cells on click
+    document.querySelectorAll('.bingo-cell').forEach(cell => {
+      cell.addEventListener('click', function() {
+        this.classList.toggle('marked');
+      });
+    });
+  </script>
 </body>
 </html>
