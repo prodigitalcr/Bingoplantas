@@ -349,8 +349,8 @@ th { background: var(--green-100); color: var(--green-900); }
   position: relative;
   display: block;
   width: 110px;
-  height: 110px;
-  border-radius: 50%;
+  height: 195px; /* Proporción vertical para historia */
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow);
   border: 3px solid white;
@@ -392,7 +392,7 @@ th { background: var(--green-100); color: var(--green-900); }
   text-align: center;
 }
 @media (max-width: 480px) {
-  .floating-promo { width: 84px; height: 84px; }
+  .floating-promo { width: 84px; height: 148px; }
 }
 
 /* ---------- Imagen del premio dentro del chat ---------- */
@@ -403,6 +403,90 @@ th { background: var(--green-100); color: var(--green-900); }
   object-fit: cover;
   border-radius: var(--radius);
   margin-bottom: 12px;
+}
+
+/* ---------- Muro social ---------- */
+.social-wall {
+  margin-top: 20px;
+}
+.post-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 15px;
+  margin-bottom: 15px;
+}
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--green-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.post-info {
+  flex: 1;
+}
+.post-name {
+  font-weight: bold;
+  color: var(--green-900);
+}
+.post-date {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+.post-content {
+  margin-bottom: 10px;
+}
+.post-image {
+  max-width: 100%;
+  border-radius: var(--radius);
+  margin-top: 10px;
+}
+
+/* ---------- Modal para posts ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.modal-title {
+  margin: 0;
+  color: var(--green-900);
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--gray-600);
 }
 </style>
 </head>
@@ -467,6 +551,11 @@ th { background: var(--green-100); color: var(--green-900); }
         <span class="promo-badge">🛍️ Tienda</span>
         <span class="promo-close" data-close-promo="2">✕</span>
       </a>
+      <a class="floating-promo hidden" id="promo3Bubble" target="_blank" rel="noopener">
+        <div class="promo-media" id="promo3Media"></div>
+        <span class="promo-badge">🛍️ Tienda</span>
+        <span class="promo-close" data-close-promo="3">✕</span>
+      </a>
     </div>
 
     <div class="card-panel" id="userNotificationsPanel">
@@ -489,6 +578,14 @@ th { background: var(--green-100); color: var(--green-900); }
             <img id="activePlantImg" src="" alt="premio" style="width:100%;border-radius:10px;max-height:340px;object-fit:contain;background:var(--gray-100);display:block;">
             <div class="gallery-thumbs" id="activePlantThumbs"></div>
             <p id="activePlantDesc" style="color:var(--gray-600);"></p>
+            
+            <!-- Información adicional del sorteo -->
+            <div id="gameInfo" style="margin-top: 15px; padding: 10px; background: var(--green-100); border-radius: 8px;">
+              <p><strong>Fecha y hora:</strong> <span id="gameDateTime"></span></p>
+              <p><strong>Cartones disponibles:</strong> <span id="cardsAvailable"></span></p>
+              <p><strong>Mínimo de cartones:</strong> <span id="minCards"></span></p>
+              <p><strong>Ganador:</strong> <span id="winnerName"></span></p>
+            </div>
           </div>
           <div class="current-number-display">
             <p style="margin:0 0 8px 0;color:var(--gray-600);">Número cayendo:</p>
@@ -504,6 +601,9 @@ th { background: var(--green-100); color: var(--green-900); }
         <h3>🎫 Tus cartones en este sorteo</h3>
         <div id="myCardsList"></div>
         <button class="btn" id="requestCardBtn">Comprar otro cartón</button>
+        <p style="font-size: 0.8rem; color: var(--gray-600); margin-top: 5px;">
+          Máximo 3 cartones por sorteo
+        </p>
       </div>
 
     </div>
@@ -516,6 +616,13 @@ th { background: var(--green-100); color: var(--green-900); }
         <input type="text" id="chatInput" placeholder="Escribe un mensaje...">
         <button class="btn small" id="sendChatBtn">Enviar</button>
       </div>
+    </div>
+
+    <!-- Muro social -->
+    <div class="card-panel">
+      <h2>📢 Muro de la Comunidad</h2>
+      <button class="btn small" id="createPostBtn" style="margin-bottom: 15px;">📝 Crear publicación</button>
+      <div id="socialWall" class="social-wall"></div>
     </div>
 
     <div class="card-panel" id="userPasswordPanel">
@@ -568,6 +675,12 @@ th { background: var(--green-100); color: var(--green-900); }
           <input type="url" id="promo2StoreUrl" placeholder="Enlace de la tienda">
           <button class="btn small red" id="removePromo2Btn" style="width:auto;">Quitar video 2</button>
         </div>
+        <div class="card-panel" style="background:var(--green-100);box-shadow:none;">
+          <h3 style="margin-top:0;">Video 3</h3>
+          <input type="url" id="promo3VideoUrl" placeholder="Enlace del video (YouTube o .mp4)">
+          <input type="url" id="promo3StoreUrl" placeholder="Enlace de la tienda">
+          <button class="btn small red" id="removePromo3Btn" style="width:auto;">Quitar video 3</button>
+        </div>
       </div>
 
       <button class="btn small" id="saveAdBtn" style="width:auto;">Guardar videos</button>
@@ -619,6 +732,8 @@ th { background: var(--green-100); color: var(--green-900); }
           <select id="plantSelectForGame"></select>
           <input type="text" id="newGameSinpe" placeholder="Número SINPE Móvil para este sorteo">
           <input type="number" id="newGamePrice" placeholder="Precio por cartón (₡)" value="1000">
+          <input type="datetime-local" id="newGameDateTime" placeholder="Fecha y hora del sorteo">
+          <input type="number" id="newGameMinCards" placeholder="Mínimo de cartones" value="5">
           <select id="newGamePattern">
             <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
             <option value="fourCorners">Patrón ganador: Cuatro esquinas</option>
@@ -647,6 +762,8 @@ th { background: var(--green-100); color: var(--green-900); }
         <div class="game-settings-grid">
           <input type="text" id="editSinpe" placeholder="Número SINPE Móvil">
           <input type="number" id="editPrice" placeholder="Precio por cartón (₡)">
+          <input type="datetime-local" id="editDateTime" placeholder="Fecha y hora del sorteo">
+          <input type="number" id="editMinCards" placeholder="Mínimo de cartones">
         </div>
         <select id="editPattern">
           <option value="fullCard">Patrón ganador: Cartón lleno (todos los números)</option>
@@ -698,6 +815,13 @@ th { background: var(--green-100); color: var(--green-900); }
       </div>
     </div>
 
+    <!-- Muro social admin -->
+    <div class="card-panel">
+      <h2>📢 Publicar ganadores del día</h2>
+      <button class="btn small" id="createAdminPostBtn" style="margin-bottom: 15px;">📝 Publicar ganador</button>
+      <div id="adminSocialWall" class="social-wall"></div>
+    </div>
+
     <div class="card-panel" id="adminPasswordPanel">
       <h3>🔒 Cambiar contraseña</h3>
       <input type="password" id="adminCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
@@ -707,6 +831,22 @@ th { background: var(--green-100); color: var(--green-900); }
       <p id="adminPasswordStatus" style="font-size:0.8rem;color:var(--gray-600);margin:8px 0 0 0;"></p>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal para crear posts -->
+<div id="postModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Crear publicación</h3>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <form id="postForm">
+      <textarea id="postContent" placeholder="Escribe tu publicación..." rows="4" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--gray-300); border-radius: 8px;"></textarea>
+      <input type="file" id="postImage" accept="image/*" style="margin-bottom: 10px;">
+      <img id="postImagePreview" class="upload-preview hidden" alt="Vista previa">
+      <button type="submit" class="btn small">Publicar</button>
+    </form>
   </div>
 </div>
 
@@ -809,7 +949,7 @@ function generateBingoCard() {
 
 function recalculateMarks(numbers, calledNumbers) {
   const calledSet = new Set(calledNumbers);
-  const marked = [[], [], [], [], []];
+  const marked = [[], [], [], []];
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 5; col++) {
       const val = numbers[row][col];
@@ -958,6 +1098,30 @@ lightboxOverlay.addEventListener("click", (e) => {
     lightboxImg.src = "";
   }
 });
+
+// ---------- Funciones auxiliares ----------
+function formatDateTime(date) {
+  if (!date) return "No especificada";
+  const options = { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit',
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true
+  };
+  return new Date(date).toLocaleString('es-ES', options);
+}
+
+function getCurrentDateTimeLocal() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 </script>
 
 <script>
@@ -1045,6 +1209,8 @@ function cleanupAllListeners() {
   if (typeof adBannerUnsub === "function") adBannerUnsub();
   if (typeof adAdminUnsub === "function") adAdminUnsub();
   if (typeof winnersHistoryUnsub === "function") winnersHistoryUnsub();
+  if (typeof socialWallUnsub === "function") socialWallUnsub();
+  if (typeof adminSocialWallUnsub === "function") adminSocialWallUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -1148,6 +1314,8 @@ let currentGameData = null;
 let lastAnnouncedWinnerId = null;
 let userNotificationsUnsub = null;
 let adBannerUnsub = null;
+let socialWallUnsub = null;
+let postImageData = "";
 
 function initUserView() {
   // Reiniciar estado de paneles
@@ -1160,6 +1328,8 @@ function initUserView() {
   if (gamesListUnsub) gamesListUnsub();
   listenUserNotifications();
   listenFloatingPromos();
+  listenSocialWall();
+  
   gamesListUnsub = db.collection("games")
     .where("status", "in", ["open", "running"])
     .onSnapshot((snap) => {
@@ -1181,6 +1351,9 @@ function initUserView() {
             <h4>${g.plantName}</h4>
             <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
             <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
+            <p style="margin-top:4px;font-size:0.8rem;color:var(--gray-600);">
+              📅 ${formatDateTime(g.dateTime)}
+            </p>
           </div>
         `;
         div.addEventListener("click", () => selectGame(doc.id));
@@ -1264,6 +1437,7 @@ function listenFloatingPromos() {
     const data = doc.exists ? doc.data() : {};
     renderFloatingPromo("1", data.promo1);
     renderFloatingPromo("2", data.promo2);
+    renderFloatingPromo("3", data.promo3);
   });
 }
 
@@ -1341,6 +1515,11 @@ function renderGame(gameId, g) {
   document.getElementById("activePlantDesc").textContent = g.plantDescription || "";
   document.getElementById("gameWinPatternLabel").textContent = "🎯 " + patternLabel(g.winPattern);
 
+  // Mostrar información adicional del sorteo
+  document.getElementById("gameDateTime").textContent = formatDateTime(g.dateTime);
+  document.getElementById("minCards").textContent = g.minCards || 5;
+  document.getElementById("winnerName").textContent = g.winnerUserName || "Aún no hay ganador";
+
   const galleryImages = (g.plantImages && g.plantImages.length) ? g.plantImages : (g.plantImageUrl ? [g.plantImageUrl] : []);
   renderPlantGallery(galleryImages);
 
@@ -1402,6 +1581,21 @@ function renderGame(gameId, g) {
     listenToChat(gameId);
   } else {
     chatPanel.classList.add("hidden");
+  }
+  
+  // Actualizar cartones disponibles
+  updateCardsAvailable(g);
+}
+
+function updateCardsAvailable(g) {
+  const cardsAvailableEl = document.getElementById("cardsAvailable");
+  if (g.status === "finished") {
+    cardsAvailableEl.textContent = "Sorteo finalizado";
+  } else {
+    const totalCards = g.totalCards || 0;
+    const minCards = g.minCards || 5;
+    const available = Math.max(0, minCards - totalCards);
+    cardsAvailableEl.textContent = `${available} cartones más para iniciar`;
   }
 }
 
@@ -1522,6 +1716,13 @@ function renderMyCards() {
 document.getElementById("requestCardBtn").addEventListener("click", async () => {
   if (!selectedGameId) return;
   if (currentGameData && currentGameData.status === "finished") return;
+  
+  // Verificar límite de 3 cartones
+  if (myCards.length >= 3) {
+    alert("Has alcanzado el máximo de 3 cartones por sorteo");
+    return;
+  }
+  
   const { numbers, marked } = generateBingoCard();
   const cardRef = db.collection("games").doc(selectedGameId).collection("cards").doc();
   await cardRef.set({
@@ -1534,6 +1735,12 @@ document.getElementById("requestCardBtn").addEventListener("click", async () => 
     paymentStatus: "pending",
     completed: false,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  
+  // Actualizar contador de cartones totales en el sorteo
+  const gameRef = db.collection("games").doc(selectedGameId);
+  await gameRef.update({
+    totalCards: firebase.firestore.FieldValue.increment(1)
   });
 });
 
@@ -1722,6 +1929,100 @@ async function sendChatMessage() {
   });
 }
 
+// ---------- Muro social ----------
+function listenSocialWall() {
+  if (socialWallUnsub) socialWallUnsub();
+  socialWallUnsub = db.collection("posts")
+    .orderBy("createdAt", "desc")
+    .onSnapshot((snap) => {
+      const posts = [];
+      snap.forEach((doc) => {
+        posts.push({ id: doc.id, ...doc.data() });
+      });
+      renderSocialWall(posts);
+    });
+}
+
+function renderSocialWall(posts) {
+  const wall = document.getElementById("socialWall");
+  wall.innerHTML = "";
+  
+  if (posts.length === 0) {
+    wall.innerHTML = `<p class="empty-state">Aún no hay publicaciones en el muro.</p>`;
+    return;
+  }
+  
+  posts.forEach(post => {
+    const postEl = document.createElement("div");
+    postEl.className = "post-card";
+    postEl.innerHTML = `
+      <div class="post-header">
+        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
+        <div class="post-info">
+          <div class="post-name">${post.userName}</div>
+          <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
+        </div>
+      </div>
+      <div class="post-content">${post.content}</div>
+      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
+    `;
+    wall.appendChild(postEl);
+  });
+}
+
+// ---------- Modal para crear posts ----------
+document.getElementById("createPostBtn").addEventListener("click", () => {
+  document.getElementById("modalTitle").textContent = "Crear publicación";
+  document.getElementById("postForm").reset();
+  document.getElementById("postImagePreview").classList.add("hidden");
+  postImageData = "";
+  document.getElementById("postModal").classList.remove("hidden");
+});
+
+document.getElementById("closeModal").addEventListener("click", () => {
+  document.getElementById("postModal").classList.add("hidden");
+});
+
+document.getElementById("postImage").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById("postImagePreview");
+  try {
+    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
+    postImageData = dataUrl;
+    preview.src = dataUrl;
+    preview.classList.remove("hidden");
+  } catch (err) {
+    alert("No se pudo procesar la imagen: " + err.message);
+  }
+});
+
+document.getElementById("postForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const content = document.getElementById("postContent").value.trim();
+  if (!content) {
+    alert("Por favor escribe algo para publicar");
+    return;
+  }
+  
+  try {
+    await db.collection("posts").add({
+      content,
+      imageUrl: postImageData || "",
+      userId: currentUser.uid,
+      userName: currentUserData.name,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    document.getElementById("postModal").classList.add("hidden");
+    document.getElementById("postForm").reset();
+    document.getElementById("postImagePreview").classList.add("hidden");
+    postImageData = "";
+  } catch (err) {
+    alert("Error al crear la publicación: " + err.message);
+  }
+});
+
 // ---------- Cambiar contraseña (reutilizable para usuario y administrador) ----------
 // Firebase exige reautenticación reciente para operaciones sensibles, así que
 // primero se confirma la contraseña actual antes de establecer la nueva.
@@ -1781,6 +2082,9 @@ let lastAlertedWinnerId = null;
 let notificationsUnsub = null;
 let plantImageData = ["", "", ""];
 let adAdminUnsub = null;
+let adminSocialWallUnsub = null;
+let autoCallInterval = null;
+let adminPostImageData = "";
 
 [1, 2, 3].forEach((n) => {
   document.getElementById(`plantImageFile${n}`).addEventListener("change", async (e) => {
@@ -1807,19 +2111,26 @@ function initAdminView() {
   listenNotifications();
   listenAdSettings();
   listenWinnersHistory();
+  listenAdminSocialWall();
+  
+  // Establecer fecha y hora actual por defecto
+  document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
 }
 
-// ---------- Videos flotantes: el admin guarda los 2 videos y sus enlaces de tienda ----------
+// ---------- Videos flotantes: el admin guarda los 3 videos y sus enlaces de tienda ----------
 function listenAdSettings() {
   if (adAdminUnsub) adAdminUnsub();
   adAdminUnsub = db.collection("settings").doc("promos").onSnapshot((doc) => {
     const data = doc.exists ? doc.data() : {};
     const p1 = data.promo1 || {};
     const p2 = data.promo2 || {};
+    const p3 = data.promo3 || {};
     document.getElementById("promo1VideoUrl").value = p1.videoUrl || "";
     document.getElementById("promo1StoreUrl").value = p1.storeUrl || "";
     document.getElementById("promo2VideoUrl").value = p2.videoUrl || "";
     document.getElementById("promo2StoreUrl").value = p2.storeUrl || "";
+    document.getElementById("promo3VideoUrl").value = p3.videoUrl || "";
+    document.getElementById("promo3StoreUrl").value = p3.storeUrl || "";
   });
 }
 
@@ -1838,8 +2149,12 @@ document.getElementById("saveAdBtn").addEventListener("click", async () => {
     videoUrl: document.getElementById("promo2VideoUrl").value.trim(),
     storeUrl: document.getElementById("promo2StoreUrl").value.trim()
   };
+  const promo3 = {
+    videoUrl: document.getElementById("promo3VideoUrl").value.trim(),
+    storeUrl: document.getElementById("promo3StoreUrl").value.trim()
+  };
 
-  for (const p of [promo1, promo2]) {
+  for (const p of [promo1, promo2, promo3]) {
     if (!isValidUrlOrEmpty(p.videoUrl) || !isValidUrlOrEmpty(p.storeUrl)) {
       statusEl.textContent = "Uno de los enlaces no parece válido. Revísalos e intenta de nuevo.";
       return;
@@ -1853,7 +2168,7 @@ document.getElementById("saveAdBtn").addEventListener("click", async () => {
   statusEl.textContent = "Guardando...";
   try {
     await db.collection("settings").doc("promos").set({
-      promo1, promo2,
+      promo1, promo2, promo3,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     statusEl.textContent = "✅ Videos guardados. Ya los ven todos los jugadores.";
@@ -1879,6 +2194,17 @@ document.getElementById("removePromo2Btn").addEventListener("click", async () =>
   try {
     await db.collection("settings").doc("promos").set({
       promo2: { videoUrl: "", storeUrl: "" }
+    }, { merge: true });
+  } catch (err) {
+    document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
+  }
+});
+document.getElementById("removePromo3Btn").addEventListener("click", async () => {
+  document.getElementById("promo3VideoUrl").value = "";
+  document.getElementById("promo3StoreUrl").value = "";
+  try {
+    await db.collection("settings").doc("promos").set({
+      promo3: { videoUrl: "", storeUrl: "" }
     }, { merge: true });
   } catch (err) {
     document.getElementById("adStatus").textContent = "Error al quitar: " + err.message;
@@ -1922,6 +2248,7 @@ function renderWinnersHistory(list) {
       <div>
         <strong>${prizeIcon(g.prizeType)} ${g.plantName}</strong>
         <div style="font-size:0.8rem;color:var(--gray-600);">Ganador: ${g.winnerUserName} — Patrón: ${patternLabel(g.winPattern)}</div>
+        <div style="font-size:0.8rem;color:var(--gray-600);">Fecha: ${formatDateTime(g.dateTime)}</div>
       </div>
       ${waLink
         ? `<a class="btn small" style="width:auto;background:#25D366;text-decoration:none;" target="_blank" rel="noopener" href="${waLink}">📲 WhatsApp</a>`
@@ -2158,6 +2485,8 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
   const plant = plantsCache[plantId];
   const sinpeNumber = document.getElementById("newGameSinpe").value.trim();
   const cardPrice = Number(document.getElementById("newGamePrice").value) || 1000;
+  const dateTime = document.getElementById("newGameDateTime").value;
+  const minCards = Number(document.getElementById("newGameMinCards").value) || 5;
   const winPattern = document.getElementById("newGamePattern").value || "fullCard";
   const plantImages = (plant.images && plant.images.length) ? plant.images : (plant.imageUrl ? [plant.imageUrl] : []);
 
@@ -2170,17 +2499,22 @@ document.getElementById("createGameBtn").addEventListener("click", async () => {
     plantImages,
     sinpeNumber: sinpeNumber || "",
     cardPrice,
+    dateTime,
+    minCards,
     winPattern,
     status: "open",
     calledNumbers: [],
     winnerUserId: null,
     winnerUserName: null,
     winnerCardId: null,
+    totalCards: 0,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 
   document.getElementById("newGameSinpe").value = "";
   document.getElementById("newGamePrice").value = "1000";
+  document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
+  document.getElementById("newGameMinCards").value = "5";
   document.getElementById("newGamePattern").value = "fullCard";
 
   document.getElementById("gameSelector").value = gameRef.id;
@@ -2192,6 +2526,10 @@ document.getElementById("gameSelector").addEventListener("change", (e) => {
   else {
     document.getElementById("gameControlPanel").classList.add("hidden");
     document.getElementById("adminChatPanel").classList.add("hidden");
+    if (autoCallInterval) {
+      clearInterval(autoCallInterval);
+      autoCallInterval = null;
+    }
   }
 });
 
@@ -2211,6 +2549,8 @@ function selectAdminGame(gameId) {
     const g = doc.data();
     document.getElementById("editSinpe").value = g.sinpeNumber || "";
     document.getElementById("editPrice").value = g.cardPrice || 1000;
+    document.getElementById("editDateTime").value = g.dateTime || "";
+    document.getElementById("editMinCards").value = g.minCards || 5;
     document.getElementById("editPattern").value = g.winPattern || "fullCard";
     if (g.winnerUserId) lastAlertedWinnerId = g.winnerUserId;
   });
@@ -2229,12 +2569,20 @@ document.getElementById("saveGameSettingsBtn").addEventListener("click", async (
   if (!selectedAdminGameId) return;
   const sinpeNumber = document.getElementById("editSinpe").value.trim();
   const cardPrice = Number(document.getElementById("editPrice").value) || 1000;
+  const dateTime = document.getElementById("editDateTime").value;
+  const minCards = Number(document.getElementById("editMinCards").value) || 5;
   const winPattern = document.getElementById("editPattern").value || "fullCard";
   const statusEl = document.getElementById("gameSettingsStatus");
 
   statusEl.textContent = "Guardando...";
   try {
-    await db.collection("games").doc(selectedAdminGameId).update({ sinpeNumber, cardPrice, winPattern });
+    await db.collection("games").doc(selectedAdminGameId).update({ 
+      sinpeNumber, 
+      cardPrice, 
+      dateTime,
+      minCards,
+      winPattern 
+    });
     statusEl.textContent = "✅ Configuración actualizada.";
   } catch (err) {
     statusEl.textContent = "Error al guardar: " + err.message;
@@ -2307,28 +2655,65 @@ function renderAdminGame(gameId, g) {
   }
 }
 
+// ---------- Funcionalidad de cantar números automáticamente ----------
 document.getElementById("callNumberBtn").addEventListener("click", async () => {
+  if (!selectedAdminGameId) return;
+  
+  // Si ya hay un intervalo activo, detenerlo
+  if (autoCallInterval) {
+    clearInterval(autoCallInterval);
+    autoCallInterval = null;
+    document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
+    return;
+  }
+  
+  // Iniciar el canto automático cada 20 segundos
+  autoCallInterval = setInterval(async () => {
+    await callNextNumber();
+  }, 20000);
+  
+  document.getElementById("callNumberBtn").textContent = "⏹ Detener canto automático";
+  
+  // Llamar al primer número inmediatamente
+  await callNextNumber();
+});
+
+async function callNextNumber() {
   if (!selectedAdminGameId) return;
   const gameRef = db.collection("games").doc(selectedAdminGameId);
 
   await db.runTransaction(async (tx) => {
     const doc = await tx.get(gameRef);
     const g = doc.data();
-    if (g.status === "finished") return;
+    if (g.status === "finished") {
+      if (autoCallInterval) {
+        clearInterval(autoCallInterval);
+        autoCallInterval = null;
+        document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
+      }
+      return;
+    }
 
     const called = g.calledNumbers || [];
     const pool = [];
     for (let n = 1; n <= 75; n++) {
       if (!called.includes(n)) pool.push(n);
     }
-    if (!pool.length) return;
+    if (!pool.length) {
+      if (autoCallInterval) {
+        clearInterval(autoCallInterval);
+        autoCallInterval = null;
+        document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
+      }
+      return;
+    }
 
     const next = pool[Math.floor(Math.random() * pool.length)];
     const newStatus = g.status === "open" ? "running" : g.status;
 
     tx.update(gameRef, { calledNumbers: [...called, next], status: newStatus });
   });
-});
+}
 
 document.getElementById("resetGameBtn").addEventListener("click", async () => {
   if (!selectedAdminGameId) return;
@@ -2356,6 +2741,13 @@ document.getElementById("resetGameBtn").addEventListener("click", async () => {
     batch.update(doc.ref, { marked: flattenGrid(resetMarked), completed: false });
   });
   await batch.commit();
+  
+  // Detener canto automático si estaba activo
+  if (autoCallInterval) {
+    clearInterval(autoCallInterval);
+    autoCallInterval = null;
+    document.getElementById("callNumberBtn").textContent = "🎲 Cantar siguiente número";
+  }
 });
 
 document.getElementById("deleteGameBtn").addEventListener("click", async () => {
@@ -2375,6 +2767,12 @@ document.getElementById("deleteGameBtn").addEventListener("click", async () => {
     if (adminChatUnsub) adminChatUnsub();
     selectedAdminGameId = null;
     document.getElementById("gameSelector").value = "";
+    
+    // Detener canto automático si estaba activo
+    if (autoCallInterval) {
+      clearInterval(autoCallInterval);
+      autoCallInterval = null;
+    }
   } catch (err) {
     statusEl.textContent = "Error al eliminar el sorteo: " + err.message;
   }
@@ -2502,6 +2900,110 @@ document.getElementById("sendCongratsBtn").addEventListener("click", () => {
   document.getElementById("adminChatInput").value =
     `¡Felicidades ${winnerUserName}! 🎉🌱 Ganaste el sorteo de "${plantName}". Por aquí coordinamos la entrega de tu premio, ¡gracias por participar!`;
   document.getElementById("adminChatInput").focus();
+});
+
+// ---------- Muro social admin ----------
+function listenAdminSocialWall() {
+  if (adminSocialWallUnsub) adminSocialWallUnsub();
+  adminSocialWallUnsub = db.collection("posts")
+    .orderBy("createdAt", "desc")
+    .onSnapshot((snap) => {
+      const posts = [];
+      snap.forEach((doc) => {
+        posts.push({ id: doc.id, ...doc.data() });
+      });
+      renderAdminSocialWall(posts);
+    });
+}
+
+function renderAdminSocialWall(posts) {
+  const wall = document.getElementById("adminSocialWall");
+  wall.innerHTML = "";
+  
+  if (posts.length === 0) {
+    wall.innerHTML = `<p class="empty-state">Aún no hay publicaciones en el muro.</p>`;
+    return;
+  }
+  
+  posts.forEach(post => {
+    const postEl = document.createElement("div");
+    postEl.className = "post-card";
+    postEl.innerHTML = `
+      <div class="post-header">
+        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
+        <div class="post-info">
+          <div class="post-name">${post.userName}</div>
+          <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
+        </div>
+      </div>
+      <div class="post-content">${post.content}</div>
+      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
+      <button class="btn small red" data-delete-post="${post.id}" style="margin-top: 10px;">Eliminar</button>
+    `;
+    wall.appendChild(postEl);
+  });
+  
+  // Agregar eventos para eliminar posts
+  wall.querySelectorAll("[data-delete-post]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (confirm("¿Eliminar esta publicación?")) {
+        try {
+          await db.collection("posts").doc(btn.dataset.deletePost).delete();
+        } catch (err) {
+          alert("Error al eliminar la publicación: " + err.message);
+        }
+      }
+    });
+  });
+}
+
+// ---------- Modal para crear posts admin ----------
+document.getElementById("createAdminPostBtn").addEventListener("click", () => {
+  document.getElementById("modalTitle").textContent = "Publicar ganador";
+  document.getElementById("postForm").reset();
+  document.getElementById("postImagePreview").classList.add("hidden");
+  adminPostImageData = "";
+  document.getElementById("postModal").classList.remove("hidden");
+});
+
+document.getElementById("postImage").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById("postImagePreview");
+  try {
+    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
+    adminPostImageData = dataUrl;
+    preview.src = dataUrl;
+    preview.classList.remove("hidden");
+  } catch (err) {
+    alert("No se pudo procesar la imagen: " + err.message);
+  }
+});
+
+document.getElementById("postForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const content = document.getElementById("postContent").value.trim();
+  if (!content) {
+    alert("Por favor escribe algo para publicar");
+    return;
+  }
+  
+  try {
+    await db.collection("posts").add({
+      content,
+      imageUrl: adminPostImageData || "",
+      userId: currentUser.uid,
+      userName: "Administrador",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    document.getElementById("postModal").classList.add("hidden");
+    document.getElementById("postForm").reset();
+    document.getElementById("postImagePreview").classList.add("hidden");
+    adminPostImageData = "";
+  } catch (err) {
+    alert("Error al crear la publicación: " + err.message);
+  }
 });
 </script>
 
