@@ -503,66 +503,6 @@ th { background: var(--green-100); color: var(--green-900); }
   font-weight: bold;
   margin-left: 8px;
 }
-
-/* ---------- Floating action buttons ---------- */
-.floating-buttons {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  z-index: 1000;
-}
-
-.floating-btn {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--green-700);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-}
-
-.floating-btn:hover {
-  transform: scale(1.1);
-  background: var(--green-900);
-}
-
-.floating-btn.secondary {
-  background: var(--amber-500);
-}
-
-.floating-btn.secondary:hover {
-  background: #b87d2d;
-}
-
-/* ---------- AI API Settings ---------- */
-.ai-settings {
-  margin-top: 20px;
-  padding: 15px;
-  background: var(--green-100);
-  border-radius: var(--radius);
-  border: 1px solid var(--green-300);
-}
-
-.ai-settings h4 {
-  margin-top: 0;
-  color: var(--green-900);
-}
-
-.ai-settings textarea {
-  min-height: 100px;
-  font-family: monospace;
-  font-size: 0.85rem;
-}
 </style>
 </head>
 <body>
@@ -897,20 +837,6 @@ th { background: var(--green-100); color: var(--green-900); }
       <div id="adminSocialWall" class="social-wall"></div>
     </div>
 
-    <!-- AI API Settings -->
-    <div class="card-panel ai-settings">
-      <h2>🤖 Configuración de IA</h2>
-      <div class="form-group">
-        <label for="apiKey">Clave API:</label>
-        <input type="password" id="apiKey" class="form-control" placeholder="Ingrese su clave API">
-      </div>
-      <div class="form-group">
-        <label for="aiPrompts">Prompts de Entrenamiento:</label>
-        <textarea id="aiPrompts" class="form-control" placeholder="Ingrese prompts para entrenar al asistente"></textarea>
-      </div>
-      <button class="btn small" id="saveAiSettingsBtn">Guardar Configuración de IA</button>
-    </div>
-
     <div class="card-panel" id="adminPasswordPanel">
       <h3>🔒 Cambiar contraseña</h3>
       <input type="password" id="adminCurrentPassword" placeholder="Contraseña actual" autocomplete="current-password">
@@ -939,23 +865,12 @@ th { background: var(--green-100); color: var(--green-900); }
   </div>
 </div>
 
-<!-- Floating Action Buttons -->
-<div class="floating-buttons">
-  <button class="floating-btn" id="shopBtn" title="Tienda">
-    <i class="fas fa-shopping-cart"></i>
-  </button>
-  <button class="floating-btn secondary" id="websiteBtn" title="Sitio Web">
-    <i class="fas fa-globe"></i>
-  </button>
-</div>
-
 <!-- ============================================================ -->
 <!-- FIREBASE SDK (compat, vía CDN — sin build tools)               -->
 <!-- ============================================================ -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
 <script>
 // ============================================================
@@ -1311,7 +1226,6 @@ function cleanupAllListeners() {
   if (typeof winnersHistoryUnsub === "function") winnersHistoryUnsub();
   if (typeof socialWallUnsub === "function") socialWallUnsub();
   if (typeof adminSocialWallUnsub === "function") adminSocialWallUnsub();
-  if (typeof aiSettingsUnsub === "function") aiSettingsUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -2219,7 +2133,6 @@ let adAdminUnsub = null;
 let adminSocialWallUnsub = null;
 let autoCallInterval = null;
 let adminPostImageData = "";
-let aiSettingsUnsub = null;
 
 [1, 2, 3].forEach((n) => {
   document.getElementById(`plantImageFile${n}`).addEventListener("change", async (e) => {
@@ -2247,21 +2160,9 @@ function initAdminView() {
   listenAdSettings();
   listenWinnersHistory();
   listenAdminSocialWall();
-  loadAiSettings();
   
   // Establecer fecha y hora actual por defecto
   document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
-  
-  // Configurar botones flotantes
-  document.getElementById("shopBtn").addEventListener("click", () => {
-    const shopUrl = document.getElementById("promo1StoreUrl").value || "https://tienda-plantas.com";
-    window.open(shopUrl, "_blank");
-  });
-  
-  document.getElementById("websiteBtn").addEventListener("click", () => {
-    const websiteUrl = "https://bingodeplantas.com"; // URL fija o configurable
-    window.open(websiteUrl, "_blank");
-  });
 }
 
 // ---------- Videos flotantes: el admin guarda los 3 videos y sus enlaces de tienda ----------
@@ -2814,10 +2715,10 @@ document.getElementById("callNumberBtn").addEventListener("click", async () => {
     return;
   }
   
-  // Iniciar el canto automático cada 5 segundos
+  // Iniciar el canto automático cada 7 segundos
   autoCallInterval = setInterval(async () => {
     await callNextNumber();
-  }, 5000);
+  }, 7000);
   
   document.getElementById("callNumberBtn").textContent = "⏹ Detener canto automático";
   
@@ -3154,34 +3055,6 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
     adminPostImageData = "";
   } catch (err) {
     alert("Error al crear la publicación: " + err.message);
-  }
-});
-
-// ---------- AI API Settings ----------
-function loadAiSettings() {
-  if (aiSettingsUnsub) aiSettingsUnsub();
-  aiSettingsUnsub = db.collection("settings").doc("ai").onSnapshot((doc) => {
-    if (doc.exists) {
-      const data = doc.data();
-      document.getElementById("apiKey").value = data.apiKey || "";
-      document.getElementById("aiPrompts").value = data.prompts || "";
-    }
-  });
-}
-
-document.getElementById("saveAiSettingsBtn").addEventListener("click", async () => {
-  const apiKey = document.getElementById("apiKey").value.trim();
-  const prompts = document.getElementById("aiPrompts").value.trim();
-  
-  try {
-    await db.collection("settings").doc("ai").set({
-      apiKey,
-      prompts,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    alert("Configuración de IA guardada correctamente");
-  } catch (err) {
-    alert("Error al guardar la configuración de IA: " + err.message);
   }
 });
 </script>
