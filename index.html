@@ -1977,21 +1977,22 @@ function listenSocialWall() {
       });
       
       // Convertir el Map a array y filtrar solo el usuario actual y administrador
+      const filteredPosts = [];
       userPosts.forEach((post) => {
         // Mostrar siempre la publicación del usuario actual
         if (post.userId === currentUser.uid) {
-          posts.push(post);
+          filteredPosts.push(post);
         }
         // Mostrar publicaciones del administrador
         else if (post.userName === "Administrador") {
-          posts.push(post);
+          filteredPosts.push(post);
         }
       });
       
       // Ordenar por fecha (más recientes primero)
-      posts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      filteredPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       
-      renderSocialWall(posts);
+      renderSocialWall(filteredPosts);
     });
 }
 
@@ -2080,7 +2081,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
       content,
       imageUrl: postImageData || "",
       userId: currentUser.uid,
-      userName: currentUserData.name,
+      userName: currentUserData.name, // Usar el nombre real del usuario
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
@@ -2990,21 +2991,22 @@ function listenAdminSocialWall() {
       });
       
       // Convertir el Map a array y filtrar solo el administrador y usuario actual
+      const filteredPosts = [];
       userPosts.forEach((post) => {
         // Mostrar siempre la publicación del administrador
         if (post.userName === "Administrador" || post.userId === currentUser.uid) {
-          posts.push(post);
+          filteredPosts.push(post);
         }
         // Mostrar publicación del usuario actual si es diferente al admin
         else if (post.userId === currentUser.uid) {
-          posts.push(post);
+          filteredPosts.push(post);
         }
       });
       
       // Ordenar por fecha (más recientes primero)
-      posts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      filteredPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       
-      renderAdminSocialWall(posts);
+      renderAdminSocialWall(filteredPosts);
     });
 }
 
@@ -3089,7 +3091,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
       content,
       imageUrl: adminPostImageData || "",
       userId: currentUser.uid,
-      userName: "Administrador",
+      userName: "Administrador", // Administrador siempre se identifica como tal
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
