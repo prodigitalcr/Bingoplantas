@@ -36,12 +36,13 @@ a { color: var(--green-700); }
 .hidden { display: none !important; }
 
 .topbar {
-  background: var(--green-900);
+  background: linear-gradient(120deg, var(--green-900), var(--green-700));
   color: white;
   padding: 14px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
 }
 .topbar h1 {
   font-size: 1.2rem;
@@ -69,8 +70,8 @@ a { color: var(--green-700); }
 
 .card-panel {
   background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(27,58,43,0.07);
   padding: 20px;
   margin-bottom: 20px;
 }
@@ -123,11 +124,13 @@ button { cursor: pointer; font-family: inherit; }
   color: white;
   border: none;
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 9px;
   font-size: 0.95rem;
   width: 100%;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
-.btn:hover { background: var(--green-900); }
+.btn:hover { background: var(--green-900); box-shadow: 0 3px 10px rgba(27,58,43,0.25); }
+.btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn.secondary { background: var(--gray-600); }
 .btn.amber { background: var(--amber-500); }
@@ -408,48 +411,96 @@ th { background: var(--green-100); color: var(--green-900); }
 /* ---------- Muro social ---------- */
 .social-wall {
   margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 .post-card {
   background: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 15px;
-  margin-bottom: 15px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(27,58,43,0.07);
+  border: 1px solid var(--gray-300);
+  padding: 16px;
+  margin-bottom: 0;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.post-card:hover {
+  box-shadow: 0 6px 18px rgba(27,58,43,0.12);
+  transform: translateY(-1px);
+}
+.post-card-admin {
+  border-color: var(--amber-500);
+  background: linear-gradient(180deg, #fff8ec 0%, #ffffff 60%);
 }
 .post-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 10px;
+  gap: 10px;
 }
 .post-avatar {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   border-radius: 50%;
   background: var(--green-300);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  margin-right: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 .post-info {
   flex: 1;
+  min-width: 0;
 }
 .post-name {
-  font-weight: bold;
+  font-weight: 700;
   color: var(--green-900);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.post-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.post-badge-admin {
+  background: var(--amber-500);
+  color: white;
+}
+.post-badge-mine {
+  background: var(--green-100);
+  color: var(--green-700);
+  border: 1px solid var(--green-300);
 }
 .post-date {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--gray-600);
+  margin-top: 2px;
 }
 .post-content {
   margin-bottom: 10px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .post-image {
-  max-width: 100%;
-  border-radius: var(--radius);
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
   margin-top: 10px;
+  cursor: zoom-in;
 }
 
 /* ---------- Modal para posts ---------- */
@@ -1964,35 +2015,14 @@ function listenSocialWall() {
   if (socialWallUnsub) socialWallUnsub();
   socialWallUnsub = db.collection("posts")
     .orderBy("createdAt", "desc")
+    .limit(100)
     .onSnapshot((snap) => {
+      // Mostrar TODAS las publicaciones de TODOS los usuarios (jugadores y admin),
+      // cada una identificada por su propio nombre. No se deduplica por usuario:
+      // cada documento de "posts" es una publicación independiente.
       const posts = [];
-      const userPosts = new Map(); // Para almacenar solo la última publicación de cada usuario
-      
-      snap.forEach((doc) => {
-        const postData = { id: doc.id, ...doc.data() };
-        // Solo guardar la más reciente de cada usuario
-        if (!userPosts.has(postData.userId)) {
-          userPosts.set(postData.userId, postData);
-        }
-      });
-      
-      // Convertir el Map a array y filtrar solo el usuario actual y administrador
-      const filteredPosts = [];
-      userPosts.forEach((post) => {
-        // Mostrar siempre la publicación del usuario actual
-        if (post.userId === currentUser.uid) {
-          filteredPosts.push(post);
-        }
-        // Mostrar publicaciones del administrador
-        else if (post.userName === "Administrador") {
-          filteredPosts.push(post);
-        }
-      });
-      
-      // Ordenar por fecha (más recientes primero)
-      filteredPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      
-      renderSocialWall(filteredPosts);
+      snap.forEach((doc) => posts.push({ id: doc.id, ...doc.data() }));
+      renderSocialWall(posts);
     });
 }
 
@@ -2006,25 +2036,27 @@ function renderSocialWall(posts) {
   }
   
   posts.forEach(post => {
+    const isMine = post.userId === currentUser.uid;
+    const isAdmin = post.userName === "Administrador";
     const postEl = document.createElement("div");
-    postEl.className = "post-card";
+    postEl.className = "post-card" + (isAdmin ? " post-card-admin" : "");
     postEl.innerHTML = `
       <div class="post-header">
-        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
+        <div class="post-avatar" style="background:${avatarColor(post.userName)}">${post.userName.charAt(0).toUpperCase()}</div>
         <div class="post-info">
-          <div class="post-name">${post.userName}</div>
+          <div class="post-name">${post.userName}${isAdmin ? '<span class="post-badge post-badge-admin">Admin</span>' : ''}${isMine ? '<span class="post-badge post-badge-mine">Tú</span>' : ''}</div>
           <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
         </div>
-        ${post.userId === currentUser.uid ? 
+        ${isMine ? 
           `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
       <div class="post-content">${post.content}</div>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
+      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación" onclick="openLightbox('${post.imageUrl}')">` : ""}
     `;
     wall.appendChild(postEl);
     
     // Agregar evento para eliminar posts (solo el usuario dueño)
-    if (post.userId === currentUser.uid) {
+    if (isMine) {
       const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
       if (deleteBtn) {
         deleteBtn.addEventListener("click", async () => {
@@ -2039,6 +2071,15 @@ function renderSocialWall(posts) {
       }
     }
   });
+}
+
+// Genera un color estable para el avatar a partir del nombre del usuario,
+// así cada jugador se distingue visualmente en el muro.
+function avatarColor(name) {
+  const palette = ["#4a8b5c", "#d99b3f", "#5b8ab3", "#a15b9e", "#c0524a", "#3f9e8b", "#8a6d3b", "#5c7cbf"];
+  let hash = 0;
+  for (let i = 0; i < (name || "").length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
 }
 
 // ---------- Modal para crear posts ----------
@@ -2978,35 +3019,13 @@ function listenAdminSocialWall() {
   if (adminSocialWallUnsub) adminSocialWallUnsub();
   adminSocialWallUnsub = db.collection("posts")
     .orderBy("createdAt", "desc")
+    .limit(100)
     .onSnapshot((snap) => {
+      // El admin ve TODAS las publicaciones de TODOS los jugadores (y las suyas),
+      // cada una con el nombre real de quien la publicó.
       const posts = [];
-      const userPosts = new Map(); // Para almacenar solo la última publicación de cada usuario
-      
-      snap.forEach((doc) => {
-        const postData = { id: doc.id, ...doc.data() };
-        // Solo guardar la más reciente de cada usuario
-        if (!userPosts.has(postData.userId)) {
-          userPosts.set(postData.userId, postData);
-        }
-      });
-      
-      // Convertir el Map a array y filtrar solo el administrador y usuario actual
-      const filteredPosts = [];
-      userPosts.forEach((post) => {
-        // Mostrar siempre la publicación del administrador
-        if (post.userName === "Administrador" || post.userId === currentUser.uid) {
-          filteredPosts.push(post);
-        }
-        // Mostrar publicación del usuario actual si es diferente al admin
-        else if (post.userId === currentUser.uid) {
-          filteredPosts.push(post);
-        }
-      });
-      
-      // Ordenar por fecha (más recientes primero)
-      filteredPosts.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      
-      renderAdminSocialWall(filteredPosts);
+      snap.forEach((doc) => posts.push({ id: doc.id, ...doc.data() }));
+      renderAdminSocialWall(posts);
     });
 }
 
@@ -3020,25 +3039,28 @@ function renderAdminSocialWall(posts) {
   }
   
   posts.forEach(post => {
+    const isMine = post.userId === currentUser.uid;
+    const isAdmin = post.userName === "Administrador";
+    const canDelete = isMine || currentUserData.role === "admin";
     const postEl = document.createElement("div");
-    postEl.className = "post-card";
+    postEl.className = "post-card" + (isAdmin ? " post-card-admin" : "");
     postEl.innerHTML = `
       <div class="post-header">
-        <div class="post-avatar">${post.userName.charAt(0).toUpperCase()}</div>
+        <div class="post-avatar" style="background:${avatarColor(post.userName)}">${post.userName.charAt(0).toUpperCase()}</div>
         <div class="post-info">
-          <div class="post-name">${post.userName}</div>
+          <div class="post-name">${post.userName}${isAdmin ? '<span class="post-badge post-badge-admin">Admin</span>' : ''}${isMine ? '<span class="post-badge post-badge-mine">Tú</span>' : ''}</div>
           <div class="post-date">${formatDateTime(post.createdAt?.toDate())}</div>
         </div>
-        ${post.userId === currentUser.uid || currentUserData.role === "admin" ? 
+        ${canDelete ? 
           `<button class="btn small red" data-delete-post="${post.id}" style="height: 30px; padding: 0 8px;">🗑️</button>` : ""}
       </div>
       <div class="post-content">${post.content}</div>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación">` : ""}
+      ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Imagen de publicación" onclick="openLightbox('${post.imageUrl}')">` : ""}
     `;
     wall.appendChild(postEl);
     
     // Agregar evento para eliminar posts
-    if (post.userId === currentUser.uid || currentUserData.role === "admin") {
+    if (canDelete) {
       const deleteBtn = postEl.querySelector(`[data-delete-post="${post.id}"]`);
       if (deleteBtn) {
         deleteBtn.addEventListener("click", async () => {
