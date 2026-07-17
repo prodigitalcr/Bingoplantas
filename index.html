@@ -1276,6 +1276,25 @@ function fileToCompressedDataUrl(file, maxDim = 900, quality = 0.7) {
   });
 }
 
+// Igual que fileToCompressedDataUrl, pero apunta a mejor resolución para que la
+// imagen se vea nítida al ampliarla en el lightbox, y va bajando la calidad
+// automáticamente si el resultado se acerca al límite de 1MB por documento de
+// Firestore (para no romper el guardado de la publicación).
+async function fileToSharpDataUrl(file) {
+  const attempts = [
+    { maxDim: 1600, quality: 0.85 },
+    { maxDim: 1600, quality: 0.7 },
+    { maxDim: 1200, quality: 0.7 },
+    { maxDim: 900, quality: 0.6 }
+  ];
+  let last = null;
+  for (const { maxDim, quality } of attempts) {
+    last = await fileToCompressedDataUrl(file, maxDim, quality);
+    if (last.length < 700000) return last; // ~700KB en base64, con margen seguro bajo el límite de 1MB
+  }
+  return last;
+}
+
 // ---------- Lightbox: ver comprobantes de pago en grande ----------
 const lightboxOverlay = document.getElementById("lightboxOverlay");
 const lightboxImg = document.getElementById("lightboxImg");
@@ -2243,7 +2262,7 @@ document.getElementById("postImage").addEventListener("change", async (e) => {
   if (!file) return;
   const preview = document.getElementById("postImagePreview");
   try {
-    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
+    const dataUrl = await fileToSharpDataUrl(file);
     postImageData = dataUrl;
     preview.src = dataUrl;
     preview.classList.remove("hidden");
