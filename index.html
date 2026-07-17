@@ -408,6 +408,118 @@ th { background: var(--green-100); color: var(--green-900); }
   margin-bottom: 12px;
 }
 
+/* ---------- Sorteos disponibles: landing page ---------- */
+.games-hero {
+  background: linear-gradient(135deg, var(--green-900) 0%, var(--green-700) 55%, var(--green-500) 100%);
+  color: white;
+  padding: 28px 24px;
+}
+.games-hero h2 {
+  color: white;
+  margin: 0 0 6px 0;
+  font-size: 1.4rem;
+}
+.games-hero p {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.9rem;
+  max-width: 520px;
+}
+.games-landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  padding: 20px;
+}
+.games-landing-grid .empty-state {
+  grid-column: 1 / -1;
+}
+.game-card-landing {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+  border: 1px solid var(--gray-300);
+  box-shadow: 0 2px 10px rgba(27,58,43,0.06);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  display: flex;
+  flex-direction: column;
+}
+.game-card-landing:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(27,58,43,0.18);
+}
+.game-card-landing-media {
+  position: relative;
+  height: 160px;
+  background: var(--gray-300);
+}
+.game-card-landing-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.game-card-landing-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%);
+}
+.game-card-landing-status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.game-card-landing-tag {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 2;
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.game-card-landing-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.game-card-landing-body h4 {
+  margin: 0;
+  color: var(--green-900);
+  font-size: 1.05rem;
+}
+.game-card-landing-meta {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.game-card-landing-cta {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--green-700);
+}
+.game-card-landing:hover .game-card-landing-cta { color: var(--green-900); }
+
 /* ---------- Muro social ---------- */
 .social-wall {
   margin-top: 20px;
@@ -629,9 +741,12 @@ th { background: var(--green-100); color: var(--green-900); }
       <div id="userNotificationsList"><p class="empty-state">No hay notificaciones nuevas.</p></div>
     </div>
 
-    <div class="card-panel" id="gameSelectorPanel">
-      <h2>Sorteos disponibles</h2>
-      <div id="gamesList" class="plant-grid"></div>
+    <div class="card-panel" id="gameSelectorPanel" style="padding:0;overflow:hidden;">
+      <div class="games-hero">
+        <h2>🌿 Sorteos disponibles</h2>
+        <p>Elige una planta y participa por ganarla. Toca una tarjeta para ver los detalles y comprar tu cartón.</p>
+      </div>
+      <div id="gamesList" class="games-landing-grid"></div>
     </div>
 
     <div id="activeGamePanel" class="hidden">
@@ -871,7 +986,13 @@ th { background: var(--green-100); color: var(--green-900); }
     </div>
 
     <div class="card-panel hidden" id="adminChatPanel">
-      <h3>💬 Chat con el ganador</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <h3 style="margin:0;">💬 Chat con el ganador</h3>
+        <button class="btn small red" id="deleteChatBtn" style="width:auto;">🗑️ Eliminar chat</button>
+      </div>
+      <p id="adminChatArchivedNote" class="hidden" style="font-size:0.8rem;color:var(--amber-500);margin:4px 0 10px 0;">
+        📦 Este sorteo ya fue eliminado. El chat se conservó y solo el administrador puede borrarlo.
+      </p>
       <img id="adminChatPrizeImg" class="chat-prize-img hidden" alt="Premio ganado">
       <button class="btn small amber" id="sendCongratsBtn" style="width:auto;margin-bottom:10px;">🎉 Preparar mensaje de felicitación</button>
       <div class="chat-box" id="adminChatBox"></div>
@@ -879,6 +1000,15 @@ th { background: var(--green-100); color: var(--green-900); }
         <input type="text" id="adminChatInput" placeholder="Escribe un mensaje...">
         <button class="btn small" id="adminSendChatBtn">Enviar</button>
       </div>
+    </div>
+
+    <!-- Chats conservados de sorteos ya eliminados: solo el administrador puede borrarlos -->
+    <div class="card-panel" id="deletedChatsPanel">
+      <h2>🗄️ Chats de sorteos eliminados</h2>
+      <p style="font-size:0.85rem;color:var(--gray-600);margin-top:-6px;">
+        Al eliminar un sorteo, su chat con el ganador se conserva aquí. Solo tú puedes borrarlo definitivamente.
+      </p>
+      <div id="deletedChatsList"><p class="empty-state">No hay chats archivados.</p></div>
     </div>
 
     <!-- Muro social admin -->
@@ -1277,6 +1407,7 @@ function cleanupAllListeners() {
   if (typeof winnersHistoryUnsub === "function") winnersHistoryUnsub();
   if (typeof socialWallUnsub === "function") socialWallUnsub();
   if (typeof adminSocialWallUnsub === "function") adminSocialWallUnsub();
+  if (typeof deletedChatsUnsub === "function") deletedChatsUnsub();
 }
 
 document.getElementById("logoutBtnUser").addEventListener("click", () => auth.signOut());
@@ -1382,6 +1513,7 @@ let userNotificationsUnsub = null;
 let adBannerUnsub = null;
 let socialWallUnsub = null;
 let postImageData = "";
+let postContext = "user"; // "user" o "admin" — determina qué formulario compartido (#postForm) está activo
 
 function initUserView() {
   // Reiniciar estado de paneles
@@ -1405,21 +1537,24 @@ function initUserView() {
         list.innerHTML = `<p class="empty-state">No hay sorteos activos por el momento. Vuelve pronto 🌱</p>`;
         return;
       }
+      const statusColors = { open: "var(--green-700)", running: "var(--amber-500)", finished: "var(--red-500)" };
       snap.forEach((doc) => {
         const g = doc.data();
         const div = document.createElement("div");
-        div.className = "plant-item";
-        div.style.cursor = "pointer";
+        div.className = "game-card-landing";
         div.innerHTML = `
-          <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
-          <div class="plant-body">
-            <span class="pattern-tag">${prizeIcon(g.prizeType)} ${prizeTypeLabel(g.prizeType)}</span>
+          <div class="game-card-landing-media">
+            <img src="${g.plantImageUrl || ''}" alt="${g.plantName}">
+            <span class="game-card-landing-status" style="background:${statusColors[g.status] || 'var(--gray-600)'};color:white;">${statusLabel(g.status)}</span>
+            <span class="game-card-landing-tag">${prizeIcon(g.prizeType)} ${prizeTypeLabel(g.prizeType)}</span>
+          </div>
+          <div class="game-card-landing-body">
             <h4>${g.plantName}</h4>
-            <span class="status-badge status-${g.status}">${statusLabel(g.status)}</span>
-            <p style="margin-top:6px;">💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</p>
-            <p style="margin-top:4px;font-size:0.8rem;color:var(--gray-600);">
-              📅 ${formatDateTime(g.dateTime)}
-            </p>
+            <div class="game-card-landing-meta">
+              <span>💰 ₡${Number(g.cardPrice || 1000).toLocaleString("es-CR")} por cartón</span>
+              <span>📅 ${formatDateTime(g.dateTime)}</span>
+            </div>
+            <span class="game-card-landing-cta">Ver sorteo →</span>
           </div>
         `;
         div.addEventListener("click", () => selectGame(doc.id));
@@ -2083,7 +2218,15 @@ function avatarColor(name) {
 }
 
 // ---------- Modal para crear posts ----------
+// NOTA: el modal (#postModal) y su formulario (#postForm) son un único elemento
+// del DOM compartido entre la vista de jugador y la vista de administrador.
+// Antes había un listener de "submit" en cada vista, así que al publicar se
+// creaban DOS publicaciones a la vez (una con el nombre real y otra como
+// "Administrador"). Ahora solo existe UN listener de "submit" para todo el
+// formulario, y "postContext" indica desde qué vista se abrió para saber
+// qué nombre de usuario usar.
 document.getElementById("createPostBtn").addEventListener("click", () => {
+  postContext = "user";
   document.getElementById("modalTitle").textContent = "Crear publicación";
   document.getElementById("postForm").reset();
   document.getElementById("postImagePreview").classList.add("hidden");
@@ -2122,7 +2265,7 @@ document.getElementById("postForm").addEventListener("submit", async (e) => {
       content,
       imageUrl: postImageData || "",
       userId: currentUser.uid,
-      userName: currentUserData.name, // Usar el nombre real del usuario
+      userName: postContext === "admin" ? "Administrador" : currentUserData.name,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     
@@ -2196,7 +2339,6 @@ let plantImageData = ["", "", ""];
 let adAdminUnsub = null;
 let adminSocialWallUnsub = null;
 let autoCallInterval = null;
-let adminPostImageData = "";
 
 [1, 2, 3].forEach((n) => {
   document.getElementById(`plantImageFile${n}`).addEventListener("change", async (e) => {
@@ -2224,6 +2366,7 @@ function initAdminView() {
   listenAdSettings();
   listenWinnersHistory();
   listenAdminSocialWall();
+  listenDeletedGameChats();
   
   // Establecer fecha y hora actual por defecto
   document.getElementById("newGameDateTime").value = getCurrentDateTimeLocal();
@@ -2741,7 +2884,9 @@ function renderAdminGame(gameId, g) {
       ${waButton}
     `;
     callBtn.disabled = true;
+    viewingArchivedChat = false;
     document.getElementById("adminChatPanel").classList.remove("hidden");
+    document.getElementById("adminChatArchivedNote").classList.add("hidden");
     listenAdminChat(gameId);
 
     // Imagen del premio ganado y datos para el mensaje de felicitación rápido.
@@ -2864,7 +3009,7 @@ document.getElementById("resetGameBtn").addEventListener("click", async () => {
 
 document.getElementById("deleteGameBtn").addEventListener("click", async () => {
   if (!selectedAdminGameId) return;
-  if (!confirm("Esto eliminará el sorteo por completo, junto con todos sus cartones y el chat. Esta acción no se puede deshacer. ¿Continuar?")) return;
+  if (!confirm("Esto eliminará el sorteo y sus cartones. El chat con el ganador (si lo hay) NO se borrará: quedará disponible en 'Chats de sorteos eliminados' hasta que tú decidas borrarlo. ¿Continuar?")) return;
 
   const gameId = selectedAdminGameId;
   const statusEl = document.getElementById("gameSettingsStatus");
@@ -2890,14 +3035,30 @@ document.getElementById("deleteGameBtn").addEventListener("click", async () => {
   }
 });
 
-// Borra un sorteo y todo lo que le pertenece (cartones y mensajes de chat).
-// Firestore no borra subcolecciones al borrar el documento padre, así que
-// hay que borrar cada subcolección manualmente antes de borrar el sorteo.
+// Borra un sorteo y sus cartones. El chat con el ganador NO se borra aquí:
+// Firestore conserva subcolecciones aunque se borre el documento padre, así
+// que el chat sigue existiendo en games/{gameId}/chat. Para que el
+// administrador pueda encontrarlo después, se guarda una referencia en
+// "deletedGameChats". Solo el botón "Eliminar chat" (admin) borra ese chat
+// de forma definitiva.
 async function deleteGameCompletely(gameId) {
   const gameRef = db.collection("games").doc(gameId);
 
+  const gameSnap = await gameRef.get();
+  const g = gameSnap.exists ? gameSnap.data() : null;
+
   await deleteAllDocsInSubcollection(gameRef.collection("cards"));
-  await deleteAllDocsInSubcollection(gameRef.collection("chat"));
+
+  if (g && g.winnerUserId) {
+    await db.collection("deletedGameChats").doc(gameId).set({
+      gameId,
+      plantName: g.plantName || "",
+      winnerUserName: g.winnerUserName || "",
+      winnerUserPhone: g.winnerUserPhone || "",
+      plantImageUrl: g.plantImageUrl || "",
+      deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
 
   await gameRef.delete();
 }
@@ -2982,6 +3143,88 @@ function listenAdminChat(gameId) {
       box.scrollTop = box.scrollHeight;
     });
 }
+
+// ---------- Chats de sorteos eliminados (conservados hasta que el admin los borre) ----------
+let deletedChatsUnsub = null;
+let viewingArchivedChat = false;
+
+function listenDeletedGameChats() {
+  if (deletedChatsUnsub) deletedChatsUnsub();
+  deletedChatsUnsub = db.collection("deletedGameChats")
+    .orderBy("deletedAt", "desc")
+    .onSnapshot((snap) => {
+      const list = [];
+      snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+      renderDeletedGameChats(list);
+    });
+}
+
+function renderDeletedGameChats(list) {
+  const box = document.getElementById("deletedChatsList");
+  box.innerHTML = "";
+  if (!list.length) {
+    box.innerHTML = `<p class="empty-state">No hay chats archivados.</p>`;
+    return;
+  }
+  list.forEach((entry) => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-300);flex-wrap:wrap;";
+    row.innerHTML = `
+      <div>
+        <strong style="color:var(--green-900);">${entry.winnerUserName || "Ganador"}</strong>
+        <span style="color:var(--gray-600);font-size:0.85rem;"> — ${entry.plantName || "Sorteo eliminado"}</span>
+        <div style="font-size:0.78rem;color:var(--gray-600);">Eliminado: ${formatDateTime(entry.deletedAt?.toDate())}</div>
+      </div>
+      <button class="btn small" style="width:auto;" data-view-archived="${entry.gameId}">💬 Ver chat</button>
+    `;
+    box.appendChild(row);
+    row.querySelector(`[data-view-archived="${entry.gameId}"]`).addEventListener("click", () => {
+      viewArchivedChat(entry.gameId, entry.plantName, entry.winnerUserName, entry.plantImageUrl);
+    });
+  });
+}
+
+// Abre el panel de chat apuntando a un sorteo ya eliminado. El chat sigue
+// existiendo en Firestore aunque el documento del sorteo ya no exista.
+function viewArchivedChat(gameId, plantName, winnerUserName, plantImageUrl) {
+  document.getElementById("gameSelector").value = "";
+  document.getElementById("gameControlPanel").classList.add("hidden");
+  if (adminGameUnsub) adminGameUnsub();
+  if (adminCardsUnsub) adminCardsUnsub();
+  if (adminChatUnsub) adminChatUnsub();
+
+  selectedAdminGameId = gameId;
+  viewingArchivedChat = true;
+  adminChatContext = { plantName, winnerUserName };
+
+  document.getElementById("adminChatPanel").classList.remove("hidden");
+  document.getElementById("adminChatArchivedNote").classList.remove("hidden");
+  const prizeImg = document.getElementById("adminChatPrizeImg");
+  if (plantImageUrl) {
+    prizeImg.src = plantImageUrl;
+    prizeImg.classList.remove("hidden");
+  } else {
+    prizeImg.classList.add("hidden");
+  }
+  listenAdminChat(gameId);
+  document.getElementById("adminChatPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Solo el administrador ve y puede usar este botón (vive dentro de la vista admin).
+// Borra el historial de chat de forma permanente, ya sea de un sorteo activo o archivado.
+document.getElementById("deleteChatBtn").addEventListener("click", async () => {
+  if (!selectedAdminGameId) return;
+  if (!confirm("Esto eliminará DEFINITIVAMENTE el historial de chat con este ganador. Esta acción no se puede deshacer. ¿Continuar?")) return;
+  try {
+    await deleteAllDocsInSubcollection(db.collection("games").doc(selectedAdminGameId).collection("chat"));
+    await db.collection("deletedGameChats").doc(selectedAdminGameId).delete().catch(() => {});
+    document.getElementById("adminChatPanel").classList.add("hidden");
+    document.getElementById("adminChatArchivedNote").classList.add("hidden");
+    viewingArchivedChat = false;
+  } catch (err) {
+    alert("Error al eliminar el chat: " + err.message);
+  }
+});
 
 document.getElementById("adminSendChatBtn").addEventListener("click", sendAdminChatMessage);
 document.getElementById("adminChatInput").addEventListener("keypress", (e) => {
@@ -3079,51 +3322,12 @@ function renderAdminSocialWall(posts) {
 
 // ---------- Modal para crear posts admin ----------
 document.getElementById("createAdminPostBtn").addEventListener("click", () => {
+  postContext = "admin";
   document.getElementById("modalTitle").textContent = "Publicar ganador";
   document.getElementById("postForm").reset();
   document.getElementById("postImagePreview").classList.add("hidden");
-  adminPostImageData = "";
+  postImageData = "";
   document.getElementById("postModal").classList.remove("hidden");
-});
-
-document.getElementById("postImage").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const preview = document.getElementById("postImagePreview");
-  try {
-    const dataUrl = await fileToCompressedDataUrl(file, 800, 0.8);
-    adminPostImageData = dataUrl;
-    preview.src = dataUrl;
-    preview.classList.remove("hidden");
-  } catch (err) {
-    alert("No se pudo procesar la imagen: " + err.message);
-  }
-});
-
-document.getElementById("postForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const content = document.getElementById("postContent").value.trim();
-  if (!content) {
-    alert("Por favor escribe algo para publicar");
-    return;
-  }
-  
-  try {
-    await db.collection("posts").add({
-      content,
-      imageUrl: adminPostImageData || "",
-      userId: currentUser.uid,
-      userName: "Administrador", // Administrador siempre se identifica como tal
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    document.getElementById("postModal").classList.add("hidden");
-    document.getElementById("postForm").reset();
-    document.getElementById("postImagePreview").classList.add("hidden");
-    adminPostImageData = "";
-  } catch (err) {
-    alert("Error al crear la publicación: " + err.message);
-  }
 });
 </script>
 
